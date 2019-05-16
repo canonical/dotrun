@@ -1,0 +1,25 @@
+name: dotrun
+base: core18
+version: '0.1.0'
+summary: A command-line tool for running projects
+description: |
+  A command-line tool for running projects
+
+grade: devel
+confinement: devmode
+
+parts:
+  repo:
+    plugin: python
+    source: .
+    python-packages:
+      - poetry
+    stage-packages:
+      - python3-pip
+      - python3-setuptools
+
+apps:
+  dotrun:
+    command: dotrun
+    plugs:
+      - home

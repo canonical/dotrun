@@ -1,0 +1,10 @@
+parts/
+prime/
+stage/
+*.snap
+*.egg-info/
+dist/
+env/
+env3/
+__pycache__/
+

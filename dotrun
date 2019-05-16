@@ -1,0 +1,34 @@
+#! /usr/bin/env bash
+
+bash
+
+#! /usr/bin/env python3
+: <<'END'
+# Core packages
+import argparse
+import pkg_resources
+import sys
+
+# Local packages
+from canonicalwebteam import dotrun
+
+parser = argparse.ArgumentParser(
+    description='Upload assets from this directory'
+)
+parser.add_argument(
+    '-v', '--version',
+    action='store_true',
+    help="Show the currently installed version of documentation-builder."
+)
+cli_arguments = vars(parser.parse_args())
+
+if cli_arguments['version']:
+    print(
+        pkg_resources.get_distribution(
+            "canonicalwebteam.dotrun"
+        ).version
+    )
+    sys.exit()
+
+dotrun.run()
+END
