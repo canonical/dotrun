@@ -27,6 +27,7 @@ setup(
     install_requires=[
         'ipdb',
         'poetry',
+        'toml',
         'virtualenv'
     ],
     scripts=['dotrun']

@@ -3,10 +3,9 @@
 # Core packages
 import argparse
 import pkg_resources
-import sys
 
 # Local packages
-from canonicalwebteam import dotrun
+from canonicalwebteam.dotrun import DotRun, list_projects
 
 # Parse arguments
 parser = argparse.ArgumentParser(
@@ -28,8 +27,8 @@ if cli_arguments['version']:
         ).version
     )
 elif cli_arguments['command'] == 'list':
-    dotrun.list_projects()
+    list_projects()
 elif cli_arguments['command'] == 'serve':
-    dotrun.serve()
+    DotRun().serve()
 else:
     parser.print_help()

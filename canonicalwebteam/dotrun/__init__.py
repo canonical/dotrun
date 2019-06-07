@@ -9,168 +9,221 @@ from glob import glob
 import toml
 
 
-PROJECT_DATA_PATH = os.environ["SNAP_USER_COMMON"] + "/projects.json"
-PROJECT_PATH = os.getcwd()
-PROJECT_ID = (
-    os.path.basename(PROJECT_PATH)
-    + "-"
-    + md5(PROJECT_PATH.encode("utf-8")).hexdigest()[:7]
-)
-ENVIRONMENT = os.environ["SNAP_USER_COMMON"] + "/" + PROJECT_ID
+PROJECTS_DATA_PATH = os.environ["SNAP_USER_COMMON"] + "/projects.json"
 
 
-projects = {}
-
-if os.path.isfile(PROJECT_DATA_PATH):
-    print(f"- Reading from {PROJECT_DATA_PATH}")
-    with open(PROJECT_DATA_PATH) as project_data_json:
-        projects = json.load(project_data_json)
-
-
-project = projects.get(PROJECT_PATH, {})
-
-
-def call(command):
+def _get_projects_data(filepath):
     """
-    Run a command within the environment
+    Read the JSON file in the filepath
     """
 
-    if not os.path.isdir(ENVIRONMENT):
-        print(f"\n[ Creating new project environment ]")
-        print(f"[ $ virtualenv {ENVIRONMENT} ]\n")
-        subprocess.check_call(["virtualenv", ENVIRONMENT])
+    projects_data = {}
 
-    print(f"\n[ $ {command} ]\n")
+    if os.path.isfile(filepath):
+        print(f"- Reading from {filepath}")
+        with open(filepath) as project_data_json:
+            projects_data = json.load(project_data_json)
 
-    response = subprocess.check_call(
-        ["bash", "-c", f". {ENVIRONMENT}/bin/activate; {command}"]
-    )
-
-    print("")
-
-    return response
+    return projects_data
 
 
-def _save(project):
-    projects[PROJECT_PATH] = project
+def _save_project_data(project_data, project_id):
+    """
+    Save the settings for a project to the PROJECT_DATA_PATH JSON file
+    """
 
-    with open(PROJECT_DATA_PATH, "w") as project_data_json:
-        json.dump(projects, project_data_json)
+    projects_data = _get_projects_data(PROJECTS_DATA_PATH)
+    projects_data[project_id] = project_data
+
+    with open(PROJECTS_DATA_PATH, "w") as projects_data_json:
+        print(f"- Saving to {PROJECTS_DATA_PATH}")
+        json.dump(projects_data, projects_data_json)
+
+
+def _get_file_hash(filename):
+    """
+    Produce an MD5 hash value from the contents of a lockfile
+    """
+
+    file_hash = None
+
+    if os.path.isfile(filename):
+        file_hash = md5()
+
+        with open(filename, "rb") as file_handler:
+            for chunk in iter(lambda: file_handler.read(4096), b""):
+                file_hash.update(chunk)
+
+    return file_hash.hexdigest()
 
 
 def list_projects():
+    """
+    List the names of all projects in the projects_data JSON file
+    """
+
     print("[ Known projects ]\n")
 
-    for project_name in projects.keys():
+    for project_name in _get_projects_data(PROJECTS_DATA_PATH).keys():
         print(f"* {project_name}")
 
     print("\n")
 
 
-def _get_python_packages():
-    installed_packages = ""
-    packages_dir = f"{ENVIRONMENT}/lib/python3.6/site-packages"
-
-    if os.path.isdir(packages_dir):
-        paths = glob(packages_dir + "/*.egg-info") + glob(
-            packages_dir + "/*.dist-info"
-        )
-        installed_packages = [os.path.basename(path) for path in paths]
-
-    return installed_packages
-
-
-def _get_lock_hash(filename):
-    lock_hash = None
-
-    if os.path.isfile(filename):
-        lock_hash = md5()
-
-        with open("poetry.lock", "rb") as lockfile:
-            for chunk in iter(lambda: lockfile.read(4096), b""):
-                lock_hash.update(chunk)
-
-    return lock_hash.hexdigest()
-
-
-def _get_yarn_packages():
-    package_jsons = glob("node_modules/*/package.json")
-    packages = {}
-
-    for package_json in package_jsons:
-        with open(package_json, "r") as package_contents:
-            package = json.load(package_contents)
-            packages[package["name"]] = package["version"]
-
-    return packages
-
-
-def install_yarn_dependencies():
+class DotRun:
     """
-    Install yarn dependencies if anything has changed
+    A class for performing operations on a project directory
     """
 
-    print("- Checking Yarn dependencies ... ", end="")
-
-    with open("package.json", "rb") as package_json:
-        package_settings = json.load(package_json)
-        yarn_dependencies = package_settings.get("dependencies", {})
-        yarn_dependencies.update(package_settings.get("devDependencies", {}))
-
-    yarn_lock_hash = _get_lock_hash("yarn.lock")
-
-    if (
-        project.get("yarn_dependencies") == yarn_dependencies
-        and project.get("yarn_lock_hash") == yarn_lock_hash
-        and project.get("yarn_packages") == _get_yarn_packages()
+    def __init__(
+        self,
+        project_path=os.getcwd(),
+        projects_data=_get_projects_data(PROJECTS_DATA_PATH),
     ):
-        print("up-to-date")
-    else:
-        print("changes detected")
-        call("yarn install")
-        project["yarn_dependencies"] = yarn_dependencies
-        project["yarn_lock_hash"] = yarn_lock_hash
-        project["yarn_packages"] = _get_yarn_packages()
-        _save(project)
+        """
+        Based on the provided project path (default to the current directory),
+        generate a PROJECT_ID, an ENVIRONMENT_PATH, and set the existing
+        project_data on the object
+        """
 
+        self.PROJECT_PATH = os.path.abspath(project_path)
+        self.PROJECT_ID = (
+            os.path.basename(self.PROJECT_PATH)
+            + "-"
+            + md5(self.PROJECT_PATH.encode("utf-8")).hexdigest()[:7]
+        )
+        self.ENVIRONMENT_PATH = (
+            os.environ["SNAP_USER_COMMON"] + "/environments/" + self.PROJECT_ID
+        )
+        self.project_data = projects_data.get(self.PROJECT_ID, {})
 
-def install_poetry_dependencies():
-    """
-    Install poetry dependencies if anything has changed
-    """
+    def _call(self, command):
+        """
+        Run a command within the environment
+        """
 
-    print("- Checking Poetry dependencies ... ", end="")
+        if not os.path.isdir(self.ENVIRONMENT_PATH):
+            print(f"\n[ Creating new project environment ]")
+            print(
+                f"[ $ virtualenv --system-site-packages {self.ENVIRONMENT_PATH} ]\n"
+            )
+            subprocess.check_call(["virtualenv", self.ENVIRONMENT_PATH])
 
-    with open("pyproject.toml", "r") as pyproject_file:
-        pyproject_settings = toml.load(pyproject_file)
-        poetry_dependencies = pyproject_settings["tool"]["poetry"][
-            "dependencies"
-        ]
-        poetry_dependencies.update(
-            pyproject_settings["tool"]["poetry"]["dev-dependencies"]
+        print(f"\n[ $ {command} ]\n")
+
+        response = subprocess.check_call(
+            [
+                "bash",
+                "-c",
+                f". {self.ENVIRONMENT_PATH}/bin/activate; {command}",
+            ]
         )
 
-    poetry_lock_hash = _get_lock_hash("poetry.lock")
+        print("")
 
-    if (
-        project.get("poetry_dependencies") == poetry_dependencies
-        and project.get("poetry_lock_hash") == poetry_lock_hash
-        and project.get("python_packages") == _get_python_packages()
-    ):
-        print("up-to-date")
-    else:
-        print("changes detected")
-        call("poetry install")
-        project["poetry_dependencies"] = poetry_dependencies
-        project["poetry_lock_hash"] = poetry_lock_hash
-        project["python_packages"] = _get_python_packages()
-        _save(project)
+        return response
 
+    def _get_poetry_packages(self):
+        """
+        Inspect the "site-packages" folder in the environment to
+        list all eggs and wheels
+        """
 
-def serve():
-    if os.path.isfile("pyproject.toml"):
-        install_poetry_dependencies()
+        installed_packages = ""
+        packages_dir = f"{self.ENVIRONMENT_PATH}/lib/python3.6/site-packages"
 
-    install_yarn_dependencies()
+        if os.path.isdir(packages_dir):
+            paths = glob(packages_dir + "/*.egg-info") + glob(
+                packages_dir + "/*.dist-info"
+            )
+            installed_packages = [os.path.basename(path) for path in paths]
 
-    call("yarn run serve")
+        return installed_packages
+
+    def _get_yarn_packages(self):
+        """
+        Inspect "node_modules" to list all packages and versions
+        """
+
+        package_jsons = glob(f"{self.PROJECT_PATH}node_modules/*/package.json")
+        packages = {}
+
+        for package_json in package_jsons:
+            with open(package_json, "r") as package_contents:
+                package = json.load(package_contents)
+                packages[package["name"]] = package["version"]
+
+        return packages
+
+    def install_yarn_dependencies(self):
+        """
+        Install yarn dependencies if anything has changed
+        """
+
+        print("- Checking Yarn dependencies ... ", end="")
+
+        yarn_state = {
+            "packages": self._get_yarn_packages(),
+            "lock_hash": _get_file_hash("yarn.lock"),
+        }
+
+        with open("package.json", "rb") as package_json:
+            package_settings = json.load(package_json)
+            yarn_state["dependencies"] = package_settings.get(
+                "dependencies", {}
+            )
+            yarn_state["dependencies"].update(
+                package_settings.get("devDependencies", {})
+            )
+
+        if self.project_data.get("yarn") == yarn_state:
+            print("up-to-date")
+        else:
+            print("changes detected")
+            self._call("yarn install")
+            yarn_state["packages"] = self._get_yarn_packages()
+            self.project_data["yarn"] = yarn_state
+            _save_project_data(self.project_data, self.PROJECT_ID)
+
+    def install_poetry_dependencies(self):
+        """
+        Install poetry dependencies if anything has changed
+        """
+
+        print("- Checking Poetry dependencies ... ", end="")
+
+        poetry_state = {
+            "packages": self._get_poetry_packages(),
+            "lock_hash": _get_file_hash("poetry.lock"),
+        }
+
+        with open("pyproject.toml", "r") as pyproject_file:
+            pyproject_settings = toml.load(pyproject_file)
+            poetry_state["dependencies"] = pyproject_settings["tool"][
+                "poetry"
+            ]["dependencies"]
+            poetry_state["dependencies"].update(
+                pyproject_settings["tool"]["poetry"]["dev-dependencies"]
+            )
+
+        if self.project_data.get("poetry") == poetry_state:
+            print("up-to-date")
+        else:
+            print("changes detected")
+            self._call("poetry install")
+            poetry_state["packages"] = self._get_poetry_packages()
+            self.project_data["poetry"] = poetry_state
+            _save_project_data(self.project_data, self.PROJECT_ID)
+
+    def serve(self):
+        """
+        First install any necessary dependencies, then
+        run "yarn run serve" to run the "serve" script in package.json
+        """
+
+        if os.path.isfile("pyproject.toml"):
+            self.install_poetry_dependencies()
+
+        self.install_yarn_dependencies()
+
+        self._call("yarn run serve")
