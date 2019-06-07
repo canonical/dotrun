@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+from contextlib import contextmanager
 from hashlib import md5
 from glob import glob
 
@@ -10,6 +11,20 @@ import toml
 
 
 PROJECTS_DATA_PATH = os.environ["SNAP_USER_COMMON"] + "/projects.json"
+
+
+@contextmanager
+def cwd(path):
+    """
+    Context manager for temporarily changing directory
+    """
+
+    oldpwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(oldpwd)
 
 
 def _get_projects_data(filepath):
@@ -75,18 +90,14 @@ class DotRun:
     A class for performing operations on a project directory
     """
 
-    def __init__(
-        self,
-        project_path=os.getcwd(),
-        projects_data=_get_projects_data(PROJECTS_DATA_PATH),
-    ):
+    def __init__(self):
         """
         Based on the provided project path (default to the current directory),
         generate a PROJECT_ID, an ENVIRONMENT_PATH, and set the existing
         project_data on the object
         """
 
-        self.PROJECT_PATH = os.path.abspath(project_path)
+        self.PROJECT_PATH = os.getcwd()
         self.PROJECT_ID = (
             os.path.basename(self.PROJECT_PATH)
             + "-"
@@ -95,7 +106,9 @@ class DotRun:
         self.ENVIRONMENT_PATH = (
             os.environ["SNAP_USER_COMMON"] + "/environments/" + self.PROJECT_ID
         )
-        self.project_data = projects_data.get(self.PROJECT_ID, {})
+        self.project_data = _get_projects_data(PROJECTS_DATA_PATH).get(
+            self.PROJECT_ID, {}
+        )
 
     def _call(self, command):
         """
@@ -215,7 +228,7 @@ class DotRun:
             self.project_data["poetry"] = poetry_state
             _save_project_data(self.project_data, self.PROJECT_ID)
 
-    def serve(self):
+    def yarn(self, command):
         """
         First install any necessary dependencies, then
         run "yarn run serve" to run the "serve" script in package.json
@@ -226,4 +239,4 @@ class DotRun:
 
         self.install_yarn_dependencies()
 
-        self._call("yarn run serve")
+        self._call(f"yarn run {command}")

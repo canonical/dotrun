@@ -2,33 +2,51 @@
 
 # Core packages
 import argparse
+import os
 import pkg_resources
 
 # Local packages
-from canonicalwebteam.dotrun import DotRun, list_projects
+from canonicalwebteam.dotrun import cwd, DotRun, list_projects
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-    description='Upload assets from this directory'
+    description="Upload assets from this directory"
 )
-parser.add_argument('command',  nargs="?", help="Choose which command to run")
 parser.add_argument(
-    '-v', '--version',
-    action='store_true',
-    help="Show the currently installed version of documentation-builder."
+    "-v",
+    "--version",
+    action="store_true",
+    help="Show the currently installed version of documentation-builder.",
 )
-cli_arguments = vars(parser.parse_args())
+parser.add_argument(
+    "-C",
+    "--directory",
+    help="The directory in which to run commands",
+)
+parser.add_argument(
+    "command", nargs="?", help="One of: list, serve, build, test, yarn"
+)
+args, extra_arguments = parser.parse_known_args()
+cli_arguments = vars(args)
+
+directory = cli_arguments.get('directory') or os.getcwd()
 
 # Process arguments
-if cli_arguments['version']:
-    print(
-        pkg_resources.get_distribution(
-            "canonicalwebteam.dotrun"
-        ).version
-    )
-elif cli_arguments['command'] == 'list':
+if cli_arguments["version"]:
+    print(pkg_resources.get_distribution("canonicalwebteam.dotrun").version)
+elif cli_arguments["command"] == "list":
     list_projects()
-elif cli_arguments['command'] == 'serve':
-    DotRun().serve()
+elif cli_arguments["command"] == "serve":
+    with cwd(directory):
+        DotRun().yarn("serve")
+elif cli_arguments["command"] == "build":
+    with cwd(directory):
+        DotRun().yarn("build")
+elif cli_arguments["command"] == "test":
+    with cwd(directory):
+        DotRun().yarn("test")
+elif cli_arguments["command"] == "yarn":
+    with cwd(directory):
+        DotRun().yarn(" ".join(extra_arguments))
 else:
     parser.print_help()

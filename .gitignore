@@ -8,3 +8,4 @@ env/
 env3/
 __pycache__/
 *.bz2
+environments/
