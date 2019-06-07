@@ -7,4 +7,4 @@ dist/
 env/
 env3/
 __pycache__/
-
+*.bz2

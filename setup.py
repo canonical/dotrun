@@ -26,7 +26,8 @@ setup(
     long_description=open('README.rst').read(),
     install_requires=[
         'ipdb',
-        'poetry'
+        'poetry',
+        'virtualenv'
     ],
     scripts=['dotrun']
 )

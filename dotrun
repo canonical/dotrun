@@ -1,9 +1,5 @@
-#! /usr/bin/env bash
-
-bash
-
 #! /usr/bin/env python3
-: <<'END'
+
 # Core packages
 import argparse
 import pkg_resources
@@ -12,9 +8,11 @@ import sys
 # Local packages
 from canonicalwebteam import dotrun
 
+# Parse arguments
 parser = argparse.ArgumentParser(
     description='Upload assets from this directory'
 )
+parser.add_argument('command',  nargs="?", help="Choose which command to run")
 parser.add_argument(
     '-v', '--version',
     action='store_true',
@@ -22,13 +20,16 @@ parser.add_argument(
 )
 cli_arguments = vars(parser.parse_args())
 
+# Process arguments
 if cli_arguments['version']:
     print(
         pkg_resources.get_distribution(
             "canonicalwebteam.dotrun"
         ).version
     )
-    sys.exit()
-
-dotrun.run()
-END
+elif cli_arguments['command'] == 'list':
+    dotrun.list_projects()
+elif cli_arguments['command'] == 'serve':
+    dotrun.serve()
+else:
+    parser.print_help()
