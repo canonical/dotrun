@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import sys
 from contextlib import contextmanager
 from hashlib import md5
 from glob import glob
@@ -77,10 +78,12 @@ def list_projects():
     List the names of all projects in the projects_data JSON file
     """
 
-    print("[ Known projects ]\n")
+    projects_data = _get_projects_data(PROJECTS_DATA_PATH)
 
-    for project_name in _get_projects_data(PROJECTS_DATA_PATH).keys():
-        print(f"* {project_name}")
+    print("\n# Projects\n")
+
+    for project_id, project_data in projects_data.items():
+        print(f"{project_id}: {project_data['path']}")
 
     print("\n")
 
@@ -97,6 +100,10 @@ class DotRun:
         project_data on the object
         """
 
+        if not os.path.isfile('package.json'):
+            print("ERROR: The project directory must contain a package.json")
+            sys.exit(1)
+
         self.PROJECT_PATH = os.getcwd()
         self.PROJECT_ID = (
             os.path.basename(self.PROJECT_PATH)
@@ -109,6 +116,8 @@ class DotRun:
         self.project_data = _get_projects_data(PROJECTS_DATA_PATH).get(
             self.PROJECT_ID, {}
         )
+
+        self.project_data['path'] = self.PROJECT_PATH
 
     def _call(self, command):
         """
