@@ -24,29 +24,40 @@ parser.add_argument(
     help="The directory in which to run commands",
 )
 parser.add_argument(
+    "-e",
+    "--env",
+    action='append',
+    help="Environment variables to use when running package.json commands",
+)
+parser.add_argument(
     "command", nargs="?", help="One of: list, serve, build, test, yarn"
 )
 args, extra_arguments = parser.parse_known_args()
 cli_arguments = vars(args)
 
-directory = cli_arguments.get('directory') or os.getcwd()
+directory = cli_arguments['directory'] or os.getcwd()
+
+# Read environment variables
+env = {}
+
+if cli_arguments['env']:
+    for env_str in cli_arguments['env']:
+        key, value = env_str.split('=')
+        env[key] = value
 
 # Process arguments
 if cli_arguments["version"]:
     print(pkg_resources.get_distribution("canonicalwebteam.dotrun").version)
 elif cli_arguments["command"] == "list":
     list_projects()
-elif cli_arguments["command"] == "serve":
+elif cli_arguments["command"] in ["serve", "build", "test"]:
     with cwd(directory):
-        DotRun().yarn("serve")
-elif cli_arguments["command"] == "build":
+        DotRun(env=env).yarn(cli_arguments["command"])
+elif cli_arguments["command"] == "clean":
     with cwd(directory):
-        DotRun().yarn("build")
-elif cli_arguments["command"] == "test":
-    with cwd(directory):
-        DotRun().yarn("test")
+        DotRun(env=env).clean()
 elif cli_arguments["command"] == "yarn":
     with cwd(directory):
-        DotRun().yarn(" ".join(extra_arguments))
+        DotRun(env=env).yarn(" ".join(extra_arguments))
 else:
     parser.print_help()

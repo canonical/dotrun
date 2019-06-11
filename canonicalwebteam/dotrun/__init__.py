@@ -93,15 +93,29 @@ class DotRun:
     A class for performing operations on a project directory
     """
 
-    def __init__(self):
+    def __init__(self, env={}):
         """
         Based on the provided project path (default to the current directory),
         generate a PROJECT_ID, an ENVIRONMENT_PATH, and set the existing
         project_data on the object
         """
 
+        if os.path.isfile('dotrun.toml'):
+            with open('dotrun.toml') as settings_file:
+                self.SETTINGS = toml.load(settings_file)
+        else:
+            print("ERROR: dotrun.toml not found in " + os.getcwd())
+            sys.exit(1)
+
+        self.env = self.SETTINGS.get('environment-variables', {})
+        self.env.update(env)
+
+        # Check all env values are string format
+        for key, value in self.env.items():
+            self.env[key] = str(value)
+
         if not os.path.isfile('package.json'):
-            print("ERROR: The project directory must contain a package.json")
+            print("ERROR: package.json not found in " + os.getcwd())
             sys.exit(1)
 
         self.PROJECT_PATH = os.getcwd()
@@ -121,25 +135,31 @@ class DotRun:
 
     def _call(self, command):
         """
-        Run a command within the environment
+        Run a command within the python environment
         """
 
-        if not os.path.isdir(self.ENVIRONMENT_PATH):
-            print(f"\n[ Creating new project environment ]")
-            print(
-                f"[ $ virtualenv --system-site-packages {self.ENVIRONMENT_PATH} ]\n"
+        try:
+            if not os.path.isdir(self.ENVIRONMENT_PATH):
+                print(f"\n[ Creating new project environment ]")
+                print(
+                    "[ $ virtualenv --system-site-packages "
+                    f"{self.ENVIRONMENT_PATH} ]\n"
+                )
+                subprocess.check_call(["virtualenv", self.ENVIRONMENT_PATH])
+
+            print(f"\n[ $ {command} ]\n")
+
+            response = subprocess.check_call(
+                [
+                    "bash",
+                    "-c",
+                    f". {self.ENVIRONMENT_PATH}/bin/activate; {command}",
+                ],
+                env=self.env
             )
-            subprocess.check_call(["virtualenv", self.ENVIRONMENT_PATH])
-
-        print(f"\n[ $ {command} ]\n")
-
-        response = subprocess.check_call(
-            [
-                "bash",
-                "-c",
-                f". {self.ENVIRONMENT_PATH}/bin/activate; {command}",
-            ]
-        )
+        except KeyboardInterrupt:
+            print(f"\n\n[ `{command}` cancelled - exiting ]")
+            sys.exit(1)
 
         print("")
 
@@ -182,7 +202,7 @@ class DotRun:
         Install yarn dependencies if anything has changed
         """
 
-        print("- Checking Yarn dependencies ... ", end="")
+        print("- Checking dependencies in package.json ... ", end="")
 
         yarn_state = {
             "packages": self._get_yarn_packages(),
@@ -212,7 +232,7 @@ class DotRun:
         Install poetry dependencies if anything has changed
         """
 
-        print("- Checking Poetry dependencies ... ", end="")
+        print("- Checking dependencies in pyproject.toml ... ", end="")
 
         poetry_state = {
             "packages": self._get_poetry_packages(),
@@ -229,7 +249,7 @@ class DotRun:
             )
 
         if self.project_data.get("poetry") == poetry_state:
-            print("up-to-date")
+            print("up to date")
         else:
             print("changes detected")
             self._call("poetry install")
