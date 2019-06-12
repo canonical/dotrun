@@ -23,10 +23,11 @@ setup(
     description=(
         'A command-line tool for running projects.'
     ),
-    long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
     install_requires=[
         'ipdb',
         'poetry',
+        'termcolor',
         'toml',
         'virtualenv'
     ],

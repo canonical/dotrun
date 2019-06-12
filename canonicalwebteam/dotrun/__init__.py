@@ -1,14 +1,17 @@
 # Standard library
 import json
 import os
+import shutil
 import subprocess
 import sys
+import time
 from contextlib import contextmanager
 from hashlib import md5
 from glob import glob
 
 # Packages
 import toml
+from termcolor import cprint
 
 
 PROJECTS_DATA_PATH = os.environ["SNAP_USER_COMMON"] + "/projects.json"
@@ -36,23 +39,36 @@ def _get_projects_data(filepath):
     projects_data = {}
 
     if os.path.isfile(filepath):
-        print(f"- Reading from {filepath}")
+        cprint(f"- Reading from {filepath}", "magenta")
         with open(filepath) as project_data_json:
             projects_data = json.load(project_data_json)
 
     return projects_data
 
 
-def _save_project_data(project_data, project_id):
+def _save_project_data(project_data, project_dir):
     """
     Save the settings for a project to the PROJECT_DATA_PATH JSON file
     """
 
     projects_data = _get_projects_data(PROJECTS_DATA_PATH)
-    projects_data[project_id] = project_data
+    projects_data[project_dir] = project_data
 
     with open(PROJECTS_DATA_PATH, "w") as projects_data_json:
-        print(f"- Saving to {PROJECTS_DATA_PATH}")
+        cprint(f"- Saving to {PROJECTS_DATA_PATH}", "magenta")
+        json.dump(projects_data, projects_data_json)
+
+
+def _clear_project_data(project_dir):
+    """
+    Clear the data for project_dir
+    """
+
+    projects_data = _get_projects_data(PROJECTS_DATA_PATH)
+    projects_data.pop(project_dir, None)
+
+    with open(PROJECTS_DATA_PATH, "w") as projects_data_json:
+        cprint(f"- Removing {project_dir} from {PROJECTS_DATA_PATH}", "magenta")
         json.dump(projects_data, projects_data_json)
 
 
@@ -82,8 +98,11 @@ def list_projects():
 
     print("\n# Projects\n")
 
-    for project_id, project_data in projects_data.items():
-        print(f"{project_id}: {project_data['path']}")
+    if projects_data:
+        for project_dir in projects_data.keys():
+            print(f"* {project_dir}")
+    else:
+        print("No active projects")
 
     print("\n")
 
@@ -93,72 +112,202 @@ class DotRun:
     A class for performing operations on a project directory
     """
 
-    def __init__(self, env={}):
+    def __init__(self, workdir, env):
         """
         Based on the provided project path (default to the current directory),
-        generate a PROJECT_ID, an ENVIRONMENT_PATH, and set the existing
+        generate an ENVIRONMENT_PATH, and set the existing
         project_data on the object
         """
 
-        if os.path.isfile('dotrun.toml'):
-            with open('dotrun.toml') as settings_file:
+        if os.path.isfile("dotrun.toml"):
+            with open("dotrun.toml") as settings_file:
                 self.SETTINGS = toml.load(settings_file)
         else:
             print("ERROR: dotrun.toml not found in " + os.getcwd())
             sys.exit(1)
 
-        self.env = self.SETTINGS.get('environment-variables', {})
+        self.WORKDIR = workdir
+        self.env = os.environ.copy()
+        self.env.update(self.SETTINGS.get("environment-variables", {}))
         self.env.update(env)
 
         # Check all env values are string format
         for key, value in self.env.items():
             self.env[key] = str(value)
 
-        if not os.path.isfile('package.json'):
+        if not os.path.isfile("package.json"):
             print("ERROR: package.json not found in " + os.getcwd())
             sys.exit(1)
 
-        self.PROJECT_PATH = os.getcwd()
-        self.PROJECT_ID = (
-            os.path.basename(self.PROJECT_PATH)
-            + "-"
-            + md5(self.PROJECT_PATH.encode("utf-8")).hexdigest()[:7]
-        )
-        self.ENVIRONMENT_PATH = (
-            os.environ["SNAP_USER_COMMON"] + "/environments/" + self.PROJECT_ID
-        )
         self.project_data = _get_projects_data(PROJECTS_DATA_PATH).get(
-            self.PROJECT_ID, {}
+            self.WORKDIR, {}
         )
+        environment_dirname = (
+            os.path.basename(self.WORKDIR)
+            + "-"
+            + md5(self.WORKDIR.encode("utf-8")).hexdigest()[:7]
+        )
+        self.ENVIRONMENT_PATH = os.path.join(
+            os.environ["SNAP_USER_COMMON"], "environments", environment_dirname
+        )
+        cprint(f"- Using environment at {self.ENVIRONMENT_PATH}", "magenta")
 
-        self.project_data['path'] = self.PROJECT_PATH
+        self.project_data["path"] = self.WORKDIR
 
-    def _call(self, command):
+    def install(self, force=False):
+        """
+        Install dependencies from pyproject.toml and package.json,
+        if there have been any changes detected
+        """
+
+        if os.path.isfile("pyproject.toml"):
+            self.install_poetry_dependencies(force=force)
+
+        self.install_yarn_dependencies(force=force)
+
+    def install_yarn_dependencies(self, force=False):
+        """
+        Install yarn dependencies if anything has changed
+        """
+
+        changes = False
+
+        yarn_state = {"lock_hash": _get_file_hash("yarn.lock")}
+
+        with open("package.json", "rb") as package_json:
+            package_settings = json.load(package_json)
+            yarn_state["dependencies"] = package_settings.get(
+                "dependencies", {}
+            )
+            yarn_state["dependencies"].update(
+                package_settings.get("devDependencies", {})
+            )
+
+        if not force:
+            cprint(
+                "- Checking dependencies in package.json ... ", "magenta", end=""
+            )
+
+            yarn_state["packages"] = self._get_yarn_packages()
+
+            if self.project_data.get("yarn") == yarn_state:
+                cprint("up to date", "magenta")
+            else:
+                cprint("changes detected", "magenta")
+                changes = True
+        else:
+            cprint(
+                "- Installing dependencies from package.json (forced)", "magenta"
+            )
+
+        if force or changes:
+            self._call(["yarn", "install"])
+            yarn_state["packages"] = self._get_yarn_packages()
+            self.project_data["yarn"] = yarn_state
+            _save_project_data(self.project_data, self.WORKDIR)
+
+    def install_poetry_dependencies(self, force=False):
+        """
+        Install poetry dependencies if anything has changed
+        """
+
+        changes = False
+
+        poetry_state = {"lock_hash": _get_file_hash("poetry.lock")}
+
+        with open("pyproject.toml", "r") as pyproject_file:
+            pyproject_settings = toml.load(pyproject_file)
+            poetry_state["dependencies"] = pyproject_settings["tool"][
+                "poetry"
+            ]["dependencies"]
+            poetry_state["dependencies"].update(
+                pyproject_settings["tool"]["poetry"]["dev-dependencies"]
+            )
+
+        if not force:
+            cprint(
+                "- Checking dependencies in pyproject.toml ... ",
+                "magenta",
+                end="",
+            )
+
+            poetry_state["packages"] = self._get_poetry_packages()
+
+            if self.project_data.get("poetry") == poetry_state:
+                cprint("up to date", "magenta")
+            else:
+                changes = True
+                cprint("changes detected", "magenta")
+        else:
+            cprint(
+                "- Installing dependencies from pyproject.toml (forced)",
+                "magenta",
+            )
+
+        if force or changes:
+            self._call(["poetry", "install"])
+            poetry_state["packages"] = self._get_poetry_packages()
+            self.project_data["poetry"] = poetry_state
+            _save_project_data(self.project_data, self.WORKDIR)
+
+    def clean(self):
+        """
+        Clean all dotrun data from project
+        """
+
+        try:
+            self._call(["yarn", "run", "clean"])
+        except Exception as error:
+            cprint(f"[ `yarn run clean` error: {error} ]", "red")
+
+        cprint(
+            f"\n- Removing project environment: {self.ENVIRONMENT_PATH}",
+            "magenta",
+        )
+        shutil.rmtree(self.ENVIRONMENT_PATH, ignore_errors=True)
+        _clear_project_data(self.WORKDIR)
+
+    def exec(self, command):
+        """
+        Run a command in the environment
+        """
+
+        self._call(command)
+
+    # Private functions
+
+    def _call(self, commands):
         """
         Run a command within the python environment
         """
 
         try:
             if not os.path.isdir(self.ENVIRONMENT_PATH):
-                print(f"\n[ Creating new project environment ]")
-                print(
-                    "[ $ virtualenv --system-site-packages "
-                    f"{self.ENVIRONMENT_PATH} ]\n"
+                cprint(f"- Creating new project environment\n", "magenta")
+                cprint(
+                    f"[ $ virtualenv {self.ENVIRONMENT_PATH} ]\n", "cyan"
                 )
                 subprocess.check_call(["virtualenv", self.ENVIRONMENT_PATH])
 
-            print(f"\n[ $ {command} ]\n")
+            # Set up environment for new virtualenv
+            # (Basically do what's done in an `activate` script)
+            self.env["VIRTUAL_ENV"] = self.ENVIRONMENT_PATH
+            self.env[
+                "PATH"
+            ] = f"{self.ENVIRONMENT_PATH}/bin:{self.env['PATH']}"
+            self.env.pop("PYTHONHOME", None)
+
+            cprint(f"\n[ $ {' '.join(commands)} ]\n", "cyan")
 
             response = subprocess.check_call(
-                [
-                    "bash",
-                    "-c",
-                    f". {self.ENVIRONMENT_PATH}/bin/activate; {command}",
-                ],
-                env=self.env
+                commands, env=self.env, cwd=self.WORKDIR
             )
         except KeyboardInterrupt:
-            print(f"\n\n[ `{command}` cancelled - exiting ]")
+            cprint(
+                f"\n\n[ `{' '.join(commands)}` cancelled - exiting ]",
+                "cyan",
+            )
+            time.sleep(1)
             sys.exit(1)
 
         print("")
@@ -187,7 +336,7 @@ class DotRun:
         Inspect "node_modules" to list all packages and versions
         """
 
-        package_jsons = glob(f"{self.PROJECT_PATH}node_modules/*/package.json")
+        package_jsons = glob(f"{self.WORKDIR}node_modules/*/package.json")
         packages = {}
 
         for package_json in package_jsons:
@@ -196,76 +345,3 @@ class DotRun:
                 packages[package["name"]] = package["version"]
 
         return packages
-
-    def install_yarn_dependencies(self):
-        """
-        Install yarn dependencies if anything has changed
-        """
-
-        print("- Checking dependencies in package.json ... ", end="")
-
-        yarn_state = {
-            "packages": self._get_yarn_packages(),
-            "lock_hash": _get_file_hash("yarn.lock"),
-        }
-
-        with open("package.json", "rb") as package_json:
-            package_settings = json.load(package_json)
-            yarn_state["dependencies"] = package_settings.get(
-                "dependencies", {}
-            )
-            yarn_state["dependencies"].update(
-                package_settings.get("devDependencies", {})
-            )
-
-        if self.project_data.get("yarn") == yarn_state:
-            print("up-to-date")
-        else:
-            print("changes detected")
-            self._call("yarn install")
-            yarn_state["packages"] = self._get_yarn_packages()
-            self.project_data["yarn"] = yarn_state
-            _save_project_data(self.project_data, self.PROJECT_ID)
-
-    def install_poetry_dependencies(self):
-        """
-        Install poetry dependencies if anything has changed
-        """
-
-        print("- Checking dependencies in pyproject.toml ... ", end="")
-
-        poetry_state = {
-            "packages": self._get_poetry_packages(),
-            "lock_hash": _get_file_hash("poetry.lock"),
-        }
-
-        with open("pyproject.toml", "r") as pyproject_file:
-            pyproject_settings = toml.load(pyproject_file)
-            poetry_state["dependencies"] = pyproject_settings["tool"][
-                "poetry"
-            ]["dependencies"]
-            poetry_state["dependencies"].update(
-                pyproject_settings["tool"]["poetry"]["dev-dependencies"]
-            )
-
-        if self.project_data.get("poetry") == poetry_state:
-            print("up to date")
-        else:
-            print("changes detected")
-            self._call("poetry install")
-            poetry_state["packages"] = self._get_poetry_packages()
-            self.project_data["poetry"] = poetry_state
-            _save_project_data(self.project_data, self.PROJECT_ID)
-
-    def yarn(self, command):
-        """
-        First install any necessary dependencies, then
-        run "yarn run serve" to run the "serve" script in package.json
-        """
-
-        if os.path.isfile("pyproject.toml"):
-            self.install_poetry_dependencies()
-
-        self.install_yarn_dependencies()
-
-        self._call(f"yarn run {command}")

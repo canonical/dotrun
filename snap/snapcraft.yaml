@@ -9,6 +9,11 @@ grade: devel
 confinement: devmode
 
 parts:
+  system-packages:
+    plugin: nil
+    stage-packages:
+      - python3-pip
+
   node:
     plugin: dump
     source: https://deb.nodesource.com/node_12.x/pool/main/n/nodejs/nodejs_12.4.0-1nodesource1_amd64.deb
@@ -16,16 +21,6 @@ parts:
   yarn:
     plugin: dump
     source: https://github.com/yarnpkg/yarn/releases/download/v1.16.0/yarn_1.16.0_all.deb
-
-  python:
-    plugin: nil
-    stage-packages:
-      - python3-setuptools
-      - python3-pip
-    override-prime: |
-      snapcraftctl prime
-      ln -sf pip3 usr/bin/pip
-      ln -sf python3 usr/bin/python
 
   dotrun-module:
     plugin: python

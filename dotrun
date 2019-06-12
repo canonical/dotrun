@@ -4,13 +4,15 @@
 import argparse
 import os
 import pkg_resources
+import sys
 
 # Local packages
-from canonicalwebteam.dotrun import cwd, DotRun, list_projects
+from canonicalwebteam.dotrun import DotRun, list_projects
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-    description="Upload assets from this directory"
+    description="Upload assets from this directory",
+    formatter_class=argparse.RawTextHelpFormatter,
 )
 parser.add_argument(
     "-v",
@@ -19,45 +21,108 @@ parser.add_argument(
     help="Show the currently installed version of documentation-builder.",
 )
 parser.add_argument(
-    "-C",
-    "--directory",
-    help="The directory in which to run commands",
+    "-C", "--directory", help="The directory in which to run commands"
+)
+parser.add_argument(
+    "-i",
+    "--force-install",
+    action="store_true",
+    default=False,
+    help="Force `poetry install` and `yarn install` to run",
+)
+parser.add_argument(
+    "-s",
+    "--skip-install",
+    action="store_true",
+    default=False,
+    help="Don't check for poetry or yarn dependencies before running",
 )
 parser.add_argument(
     "-e",
     "--env",
-    action='append',
+    action="append",
+    default=[],
     help="Environment variables to use when running package.json commands",
 )
 parser.add_argument(
-    "command", nargs="?", help="One of: list, serve, build, test, yarn"
+    "command",
+    nargs="?",
+    help=(
+        "Project commands will first install any defined dependencies\n"
+        "from `package.json` and `pyproject.toml`, and run the commands\n"
+        "within a confined context.\n"
+        "\n"
+        "Commands:\n"
+        "- list: List active project directories\n"
+        "- install: Set up environment and install dependencies for project\n"
+        "- serve: Run `yarn run serve` in this project\n"
+        "- build: Run `yarn run build` in this project\n"
+        "- yarn {command}: Run `yarn {command}` in project environment\n"
+        "- poetry {command}: Run `poetry {command}` in project environment\n"
+        "- exec {command}: Run `{command}` in project's environment\n"
+        "- clean: Run `yarn run clean` and forget about this project\n"
+    ),
 )
 args, extra_arguments = parser.parse_known_args()
 cli_arguments = vars(args)
 
-directory = cli_arguments['directory'] or os.getcwd()
-
-# Read environment variables
-env = {}
-
-if cli_arguments['env']:
-    for env_str in cli_arguments['env']:
-        key, value = env_str.split('=')
-        env[key] = value
-
-# Process arguments
+# Atomic functions
 if cli_arguments["version"]:
     print(pkg_resources.get_distribution("canonicalwebteam.dotrun").version)
-elif cli_arguments["command"] == "list":
+    sys.exit()
+
+if cli_arguments["command"] == "list":
     list_projects()
-elif cli_arguments["command"] in ["serve", "build", "test"]:
-    with cwd(directory):
-        DotRun(env=env).yarn(cli_arguments["command"])
-elif cli_arguments["command"] == "clean":
-    with cwd(directory):
-        DotRun(env=env).clean()
+    sys.exit()
+
+# Set up dotrun for directory
+env = {}
+
+for env_string in cli_arguments["env"]:
+    key, value = env_string.split('=')
+    env[key] = value
+
+dotrun = DotRun(
+    workdir=cli_arguments["directory"] or os.getcwd(),
+    env=env,
+)
+
+# Project functions
+if cli_arguments["command"] == "install":
+    dotrun.install(force=True)
+
+elif cli_arguments["command"] == "exec" and extra_arguments:
+    if not cli_arguments["skip_install"]:
+        dotrun.install(force=cli_arguments["force_install"])
+    dotrun.exec(extra_arguments)
+
 elif cli_arguments["command"] == "yarn":
-    with cwd(directory):
-        DotRun(env=env).yarn(" ".join(extra_arguments))
+    if not cli_arguments["skip_install"]:
+        dotrun.install(force=cli_arguments["force_install"])
+    dotrun.exec(["yarn"] + extra_arguments)
+
+elif cli_arguments["command"] == "poetry":
+    if not cli_arguments["skip_install"]:
+        dotrun.install(force=cli_arguments["force_install"])
+    dotrun.exec(["poetry"] + extra_arguments)
+
+elif cli_arguments["command"] == "serve":
+    if not cli_arguments["skip_install"]:
+        dotrun.install(force=cli_arguments["force_install"])
+    dotrun.exec(['yarn', 'run', 'serve'])
+
+elif cli_arguments["command"] == "build":
+    if not cli_arguments["skip_install"]:
+        dotrun.install(force=cli_arguments["force_install"])
+    dotrun.exec(['yarn', 'run', 'build'])
+
+elif cli_arguments["command"] == "test":
+    if not cli_arguments["skip_install"]:
+        dotrun.install(force=cli_arguments["force_install"])
+    dotrun.exec(['yarn', 'run', 'test'])
+
+elif cli_arguments["command"] == "clean":
+    dotrun.clean()
+
 else:
     parser.print_help()
