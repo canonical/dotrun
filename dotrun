@@ -1,24 +1,14 @@
 #! /usr/bin/env python3
 
-# Core packages
+# Standard library
 import argparse
-import os
-import pkg_resources
-import sys
 
-# Local packages
-from canonicalwebteam.dotrun import DotRun, list_projects
+# Local modules
+from canonicalwebteam.dotrun import commands
 
 # Parse arguments
 parser = argparse.ArgumentParser(
-    description="Upload assets from this directory",
-    formatter_class=argparse.RawTextHelpFormatter,
-)
-parser.add_argument(
-    "-v",
-    "--version",
-    action="store_true",
-    help="Show the currently installed version of documentation-builder.",
+    description="Run commands from this directory"
 )
 parser.add_argument(
     "-C", "--directory", help="The directory in which to run commands"
@@ -38,91 +28,77 @@ parser.add_argument(
     help="Don't check for poetry or yarn dependencies before running",
 )
 parser.add_argument(
-    "-e",
     "--env",
     action="append",
     default=[],
     help="Environment variables to use when running package.json commands",
 )
-parser.add_argument(
-    "command",
-    nargs="?",
+
+# Commands
+subparsers = parser.add_subparsers(description="Commands: serve, watch etc.")
+subparsers.required = True
+subparsers.dest = 'command'
+
+clean_parser = subparsers.add_parser(
+    "clean",
     help=(
-        "Project commands will first install any defined dependencies\n"
-        "from `package.json` and `pyproject.toml`, and run the commands\n"
-        "within a confined context.\n"
-        "\n"
-        "Commands:\n"
-        "- list: List active project directories\n"
-        "- install: Set up environment and install dependencies for project\n"
-        "- serve: Run `yarn run serve` in this project\n"
-        "- build: Run `yarn run build` in this project\n"
-        "- yarn {command}: Run `yarn {command}` in project environment\n"
-        "- poetry {command}: Run `poetry {command}` in project environment\n"
-        "- exec {command}: Run `{command}` in project's environment\n"
-        "- clean: Run `yarn run clean` and forget about this project\n"
+        "Run `yarn run clean` in the project environment, "
+        "and forget about this project"
     ),
 )
-args, extra_arguments = parser.parse_known_args()
-cli_arguments = vars(args)
+clean_parser.set_defaults(func=commands.version)
 
-# Atomic functions
-if cli_arguments["version"]:
-    print(pkg_resources.get_distribution("canonicalwebteam.dotrun").version)
-    sys.exit()
+list_parser = subparsers.add_parser("list", help="List active projects")
+list_parser.set_defaults(func=commands.list_projects)
 
-if cli_arguments["command"] == "list":
-    list_projects()
-    sys.exit()
-
-# Set up dotrun for directory
-env = {}
-
-for env_string in cli_arguments["env"]:
-    key, value = env_string.split('=')
-    env[key] = value
-
-dotrun = DotRun(
-    workdir=cli_arguments["directory"] or os.getcwd(),
-    env=env,
+install_parser = subparsers.add_parser(
+    "install", help="Install dependencies with yarn and poetry"
 )
+install_parser.set_defaults(func=commands.install)
 
-# Project functions
-if cli_arguments["command"] == "install":
-    dotrun.install(force=True)
+serve_parser = subparsers.add_parser(
+    "serve", help="Run `yarn run serv` inside the project environment"
+)
+serve_parser.add_argument(
+    "--watch",
+    action="store_true",
+    default=False,
+    help="Run `yarn run watch` alongside `serve`",
+)
+serve_parser.set_defaults(func=commands.serve)
 
-elif cli_arguments["command"] == "exec" and extra_arguments:
-    if not cli_arguments["skip_install"]:
-        dotrun.install(force=cli_arguments["force_install"])
-    dotrun.exec(extra_arguments)
+build_parser = subparsers.add_parser(
+    "build", help="Run `yarn run build` inside the project environment"
+)
+build_parser.set_defaults(func=commands.build)
 
-elif cli_arguments["command"] == "yarn":
-    if not cli_arguments["skip_install"]:
-        dotrun.install(force=cli_arguments["force_install"])
-    dotrun.exec(["yarn"] + extra_arguments)
+test_parser = subparsers.add_parser(
+    "test", help="Run `yarn run test` in the project environment"
+)
+test_parser.set_defaults(func=commands.test)
 
-elif cli_arguments["command"] == "poetry":
-    if not cli_arguments["skip_install"]:
-        dotrun.install(force=cli_arguments["force_install"])
-    dotrun.exec(["poetry"] + extra_arguments)
+version_parser = subparsers.add_parser(
+    "clean", help="Print the installed dotrun version"
+)
+version_parser.set_defaults(func=commands.clean)
 
-elif cli_arguments["command"] == "serve":
-    if not cli_arguments["skip_install"]:
-        dotrun.install(force=cli_arguments["force_install"])
-    dotrun.exec(['yarn', 'run', 'serve'])
 
-elif cli_arguments["command"] == "build":
-    if not cli_arguments["skip_install"]:
-        dotrun.install(force=cli_arguments["force_install"])
-    dotrun.exec(['yarn', 'run', 'build'])
+exec_parser = subparsers.add_parser(
+    "exec", help="Execute a command in the project environment"
+)
+exec_parser.set_defaults(func=commands.exec_command)
 
-elif cli_arguments["command"] == "test":
-    if not cli_arguments["skip_install"]:
-        dotrun.install(force=cli_arguments["force_install"])
-    dotrun.exec(['yarn', 'run', 'test'])
+yarn_parser = subparsers.add_parser(
+    "yarn", help="Run `yarn {command}` in the project environment"
+)
+yarn_parser.add_argument("remainader", nargs=argparse.REMAINDER)
+yarn_parser.set_defaults(func=commands.list_projects)
 
-elif cli_arguments["command"] == "clean":
-    dotrun.clean()
+poetry_parser = subparsers.add_parser(
+    "poetry", help="Run `poetry {command}` in the project environment"
+)
+poetry_parser.add_argument("remainader", nargs=argparse.REMAINDER)
+poetry_parser.set_defaults(func=commands.list_projects)
 
-else:
-    parser.print_help()
+args = parser.parse_args()
+args.func(vars(args))

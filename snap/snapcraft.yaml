@@ -1,11 +1,11 @@
 name: dotrun
 base: core18
-version: '0.1.1'
+version: '0.2.2'
 summary: A command-line tool for running projects
 description: |
   A command-line tool for running projects
 
-grade: devel
+grade: stable
 confinement: devmode
 
 parts:
@@ -31,3 +31,6 @@ apps:
     command: dotrun
     plugs:
       - home
+      - network
+      - network-bind
+      - process-control

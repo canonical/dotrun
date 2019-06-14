@@ -31,7 +31,7 @@ def cwd(path):
         os.chdir(oldpwd)
 
 
-def _get_projects_data(filepath):
+def get_projects_data(filepath):
     """
     Read the JSON file in the filepath
     """
@@ -51,7 +51,7 @@ def _save_project_data(project_data, project_dir):
     Save the settings for a project to the PROJECT_DATA_PATH JSON file
     """
 
-    projects_data = _get_projects_data(PROJECTS_DATA_PATH)
+    projects_data = get_projects_data(PROJECTS_DATA_PATH)
     projects_data[project_dir] = project_data
 
     with open(PROJECTS_DATA_PATH, "w") as projects_data_json:
@@ -64,11 +64,13 @@ def _clear_project_data(project_dir):
     Clear the data for project_dir
     """
 
-    projects_data = _get_projects_data(PROJECTS_DATA_PATH)
+    projects_data = get_projects_data(PROJECTS_DATA_PATH)
     projects_data.pop(project_dir, None)
 
     with open(PROJECTS_DATA_PATH, "w") as projects_data_json:
-        cprint(f"- Removing {project_dir} from {PROJECTS_DATA_PATH}", "magenta")
+        cprint(
+            f"- Removing {project_dir} from {PROJECTS_DATA_PATH}", "magenta"
+        )
         json.dump(projects_data, projects_data_json)
 
 
@@ -87,24 +89,6 @@ def _get_file_hash(filename):
                 file_hash.update(chunk)
 
     return file_hash.hexdigest()
-
-
-def list_projects():
-    """
-    List the names of all projects in the projects_data JSON file
-    """
-
-    projects_data = _get_projects_data(PROJECTS_DATA_PATH)
-
-    print("\n# Projects\n")
-
-    if projects_data:
-        for project_dir in projects_data.keys():
-            print(f"* {project_dir}")
-    else:
-        print("No active projects")
-
-    print("\n")
 
 
 class DotRun:
@@ -139,7 +123,7 @@ class DotRun:
             print("ERROR: package.json not found in " + os.getcwd())
             sys.exit(1)
 
-        self.project_data = _get_projects_data(PROJECTS_DATA_PATH).get(
+        self.project_data = get_projects_data(PROJECTS_DATA_PATH).get(
             self.WORKDIR, {}
         )
         environment_dirname = (
@@ -185,7 +169,9 @@ class DotRun:
 
         if not force:
             cprint(
-                "- Checking dependencies in package.json ... ", "magenta", end=""
+                "- Checking dependencies in package.json ... ",
+                "magenta",
+                end="",
             )
 
             yarn_state["packages"] = self._get_yarn_packages()
@@ -197,11 +183,12 @@ class DotRun:
                 changes = True
         else:
             cprint(
-                "- Installing dependencies from package.json (forced)", "magenta"
+                "- Installing dependencies from package.json (forced)",
+                "magenta",
             )
 
         if force or changes:
-            self._call(["yarn", "install"])
+            self._call(["yarn", "--no-default-rc", "install"])
             yarn_state["packages"] = self._get_yarn_packages()
             self.project_data["yarn"] = yarn_state
             _save_project_data(self.project_data, self.WORKDIR)
@@ -256,9 +243,11 @@ class DotRun:
         """
 
         try:
-            self._call(["yarn", "run", "clean"])
+            self._call(["yarn", "--no-default-rc", "run", "clean"])
         except Exception as error:
-            cprint(f"[ `yarn run clean` error: {error} ]", "red")
+            cprint(
+                f"[ `yarn --no-default-rc run clean` error: {error} ]", "red"
+            )
 
         cprint(
             f"\n- Removing project environment: {self.ENVIRONMENT_PATH}",
@@ -266,6 +255,22 @@ class DotRun:
         )
         shutil.rmtree(self.ENVIRONMENT_PATH, ignore_errors=True)
         _clear_project_data(self.WORKDIR)
+
+    def serve(self, watch=False):
+        """
+        Run "yarn run serve", and also run "yarn run watch" alongside it
+        """
+
+        # Run watcher, if required
+        if watch:
+            watch_process = subprocess.Popen(
+                ["yarn", "--no-default-rc", "run", "watch"]
+            )
+
+        self._call(["yarn", "--no-default-rc", "run", "serve"])
+
+        if watch:
+            watch_process.terminate()
 
     def exec(self, command):
         """
@@ -284,9 +289,7 @@ class DotRun:
         try:
             if not os.path.isdir(self.ENVIRONMENT_PATH):
                 cprint(f"- Creating new project environment\n", "magenta")
-                cprint(
-                    f"[ $ virtualenv {self.ENVIRONMENT_PATH} ]\n", "cyan"
-                )
+                cprint(f"[ $ virtualenv {self.ENVIRONMENT_PATH} ]\n", "cyan")
                 subprocess.check_call(["virtualenv", self.ENVIRONMENT_PATH])
 
             # Set up environment for new virtualenv
@@ -304,11 +307,9 @@ class DotRun:
             )
         except KeyboardInterrupt:
             cprint(
-                f"\n\n[ `{' '.join(commands)}` cancelled - exiting ]",
-                "cyan",
+                f"\n\n[ `{' '.join(commands)}` cancelled - exiting ]", "cyan"
             )
             time.sleep(1)
-            sys.exit(1)
 
         print("")
 
