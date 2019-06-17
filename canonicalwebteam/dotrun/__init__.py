@@ -14,7 +14,11 @@ import toml
 from termcolor import cprint
 
 
-PROJECTS_DATA_PATH = os.environ["SNAP_USER_COMMON"] + "/projects.json"
+DATA_DIR = os.environ.get(
+    "SNAP_USER_COMMON", os.path.join(os.environ["HOME"], ".config", "dotrun")
+)
+os.makedirs(DATA_DIR, exist_ok=True)
+PROJECTS_DATA_PATH = os.path.join(DATA_DIR, "projects.json")
 
 
 @contextmanager
@@ -94,6 +98,7 @@ def _get_file_hash(filename):
 class DotRun:
     """
     A class for performing operations on a project directory
+    using an encapsulated Python virtualenv
     """
 
     def __init__(self, workdir, env):
@@ -132,7 +137,7 @@ class DotRun:
             + md5(self.WORKDIR.encode("utf-8")).hexdigest()[:7]
         )
         self.ENVIRONMENT_PATH = os.path.join(
-            os.environ["SNAP_USER_COMMON"], "environments", environment_dirname
+            DATA_DIR, "environments", environment_dirname
         )
         cprint(f"- Using environment at {self.ENVIRONMENT_PATH}", "magenta")
 
@@ -263,14 +268,13 @@ class DotRun:
 
         # Run watcher, if required
         if watch:
-            watch_process = subprocess.Popen(
-                ["yarn", "--no-default-rc", "run", "watch"]
+            cprint(f"- Adding watcher", "magenta")
+            self._call(
+                ["yarn", "--no-default-rc", "run", "serve"],
+                background_commands=["yarn", "--no-default-rc", "run", "watch"],
             )
-
-        self._call(["yarn", "--no-default-rc", "run", "serve"])
-
-        if watch:
-            watch_process.terminate()
+        else:
+            self._call(["yarn", "--no-default-rc", "run", "serve"])
 
     def exec(self, command):
         """
@@ -281,10 +285,14 @@ class DotRun:
 
     # Private functions
 
-    def _call(self, commands):
+    def _call(self, commands, background_commands=None):
         """
-        Run a command within the python environment
+        Run a command within the python environment. Optionally run another
+        command in the background. The background command will be
+        terminated when the foreground command terminates.
         """
+
+        response = None
 
         try:
             if not os.path.isdir(self.ENVIRONMENT_PATH):
@@ -300,12 +308,34 @@ class DotRun:
             ] = f"{self.ENVIRONMENT_PATH}/bin:{self.env['PATH']}"
             self.env.pop("PYTHONHOME", None)
 
-            cprint(f"\n[ $ {' '.join(commands)} ]\n", "cyan")
+            if background_commands:
+                background_process = subprocess.Popen(background_commands)
+                cprint(
+                    f"\n[ $ {' '.join(background_commands)} & "
+                    f"{' '.join(commands)} ]\n",
+                    "cyan",
+                )
+            else:
+                cprint(f"\n[ $ {' '.join(commands)} ]\n", "cyan")
 
             response = subprocess.check_call(
                 commands, env=self.env, cwd=self.WORKDIR
             )
+
+            if background_commands:
+                cprint(
+                    f"\n\n[ Terminating `{' '.join(background_commands)}` ]",
+                    "cyan",
+                )
+                background_process.terminate()
         except KeyboardInterrupt:
+            if background_commands:
+                cprint(
+                    f"\n\n[ Terminating `{' '.join(background_commands)}` ]",
+                    "cyan",
+                )
+                background_process.terminate()
+
             cprint(
                 f"\n\n[ `{' '.join(commands)}` cancelled - exiting ]", "cyan"
             )
