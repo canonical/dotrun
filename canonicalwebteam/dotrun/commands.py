@@ -4,11 +4,7 @@ import pkg_resources
 import sys
 
 # Local packages
-from canonicalwebteam.dotrun import (
-    DotRun,
-    get_projects_data,
-    PROJECTS_DATA_PATH,
-)
+from canonicalwebteam.dotrun.models import DotRun, ProjectData
 
 
 # Set up dotrun for directory
@@ -19,7 +15,9 @@ def _dotrun(args):
         key, value = env_string.split("=")
         env[key] = value
 
-    dotrun = DotRun(workdir=args["directory"] or os.getcwd(), env=env)
+    dotrun = DotRun(
+        project_data=ProjectData(args["directory"] or os.getcwd()), env=env
+    )
 
     return dotrun
 
@@ -28,24 +26,6 @@ def _dotrun(args):
 def version(args):
     print(pkg_resources.get_distribution("canonicalwebteam.dotrun").version)
     sys.exit()
-
-
-def list_projects(args):
-    """
-    List the names of all projects in the projects_data JSON file
-    """
-
-    projects_data = get_projects_data(PROJECTS_DATA_PATH)
-
-    print("\n# Projects\n")
-
-    if projects_data:
-        for project_dir in projects_data.keys():
-            print(f"* {project_dir}")
-    else:
-        print("No active projects")
-
-    print("\n")
 
 
 def install(args):
@@ -67,6 +47,7 @@ def yarn(args):
 
 
 def poetry(args):
+    dotrun = _dotrun(args)
     if not args["skip_install"]:
         dotrun.install(force=args["force_install"])
     dotrun.exec(["poetry"] + args["remainder"])
@@ -91,6 +72,21 @@ def test(args):
     if not args["skip_install"]:
         dotrun.install(force=args["force_install"])
     dotrun.exec(["yarn", "run", "test"])
+
+
+def list_projects():
+    """
+    List the names of all projects in the projects_data JSON file
+    """
+
+    projects_data = ProjectData().all()
+
+    print("\n# Projects\n")
+
+    for project_id, project_data in projects_data.items():
+        print(f"{project_id}: {project_data['path']}")
+
+    print("\n")
 
 
 def clean(args):
