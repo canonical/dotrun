@@ -165,7 +165,9 @@ class DotRun:
         if there have been any changes detected
         """
 
-        if os.path.isfile("pyproject.toml"):
+        if os.path.isfile(
+            os.path.join(self.project_data.path, "pyproject.toml")
+        ):
             self.install_poetry_dependencies(force=force)
 
         self.install_yarn_dependencies(force=force)
@@ -224,7 +226,9 @@ class DotRun:
         lock_path = os.path.join(self.project_data.path, "poetry.lock")
         poetry_state = {"lock_hash": file_md5(lock_path)}
 
-        with open("pyproject.toml", "r") as pyproject_file:
+        with open(
+            os.path.join(self.project_data.path, "pyproject.toml"), "r"
+        ) as pyproject_file:
             pyproject_settings = toml.load(pyproject_file)
             poetry_state["dependencies"] = pyproject_settings["tool"][
                 "poetry"

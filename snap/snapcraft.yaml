@@ -1,6 +1,6 @@
 name: dotrun
 base: core18
-version: '0.2.3'
+version: '0.2.4'
 summary: A command-line tool for running projects
 description: |
   A command-line tool for running projects

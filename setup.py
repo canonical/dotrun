@@ -13,7 +13,7 @@ assert sys.version_info >= (3, 5), (
 
 setup(
     name='canonicalwebteam.dotrun',
-    version='0.1.0',
+    version='0.0.0',
     author='Canonical webteam',
     author_email='robin+pypi@canonical.com',
     url='https://github.com/canonical-web-and-design/dotrun',
