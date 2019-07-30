@@ -84,10 +84,7 @@ class ProjectData:
         Clear the data for project_dir
         """
 
-        cprint(
-            f"\n- Removing virtualenv: {self.virtualenv_path}",
-            "magenta",
-        )
+        cprint(f"\n- Removing virtualenv: {self.virtualenv_path}", "magenta")
         shutil.rmtree(self.virtualenv_path, ignore_errors=True)
 
         projects_data = self.all()
@@ -158,8 +155,8 @@ class DotRun:
         for key, value in self.env.items():
             self.env[key] = str(value)
 
-        if not os.path.isfile("package.json"):
-            print("ERROR: package.json not found in " + os.getcwd())
+        if not os.path.isfile(os.path.join(project_data.path, "package.json")):
+            print("ERROR: package.json not found in " + project_data.path)
             sys.exit(1)
 
     def install(self, force=False):
@@ -179,10 +176,12 @@ class DotRun:
         """
 
         changes = False
+        lock_path = os.path.join(self.project_data.path, "yarn.lock")
+        yarn_state = {"lock_hash": file_md5(lock_path)}
 
-        yarn_state = {"lock_hash": file_md5("yarn.lock")}
-
-        with open("package.json", "rb") as package_json:
+        with open(
+            os.path.join(self.project_data.path, "package.json"), "rb"
+        ) as package_json:
             package_settings = json.load(package_json)
             yarn_state["dependencies"] = package_settings.get(
                 "dependencies", {}
@@ -222,8 +221,8 @@ class DotRun:
         """
 
         changes = False
-
-        poetry_state = {"lock_hash": file_md5("poetry.lock")}
+        lock_path = os.path.join(self.project_data.path, "poetry.lock")
+        poetry_state = {"lock_hash": file_md5(lock_path)}
 
         with open("pyproject.toml", "r") as pyproject_file:
             pyproject_settings = toml.load(pyproject_file)
