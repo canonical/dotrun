@@ -1,19 +1,14 @@
 name: dotrun
 base: core18
-version: '0.2.4'
+version: '1.0.0-rc-yarn-only'
 summary: A command-line tool for running projects
 description: |
   A command-line tool for running projects
 
 grade: stable
-confinement: devmode
+confinement: strict
 
 parts:
-  system-packages:
-    plugin: nil
-    stage-packages:
-      - python3-pip
-
   node:
     plugin: dump
     source: https://deb.nodesource.com/node_12.x/pool/main/n/nodejs/nodejs_12.4.0-1nodesource1_amd64.deb
