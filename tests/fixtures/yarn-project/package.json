@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "concurrently 'yarn run build' 'yarn run serve'",
+    "build": "echo \"Build: ${BUILD}\"",
+    "serve": "sleep 1; echo \"Serving: ${SERVE}\"",
+    "fail": "echo 'Failed'; exit 26"
+  },
+  "dependencies": {
+    "concurrently": "5.1.0"
+  }
+}

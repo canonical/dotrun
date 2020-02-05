@@ -12,3 +12,5 @@ environments/
 node_modules/
 yarn.lock
 .vscode/
+.dotrun.json
+
