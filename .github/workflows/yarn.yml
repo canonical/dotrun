@@ -7,6 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     name: build
     steps:
-    - name: Install dependencies
-      run: |
-        echo hi
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Install Snapcraft
+        run: |
+          sudo snap install snapcraft --classic
+          sudo chown root:root /
+      - name: Install dotrun snap
+        run: |
+          snapcraft --destructive-mode
+          sudo snap install --dangerous *.snap
+      - name: Get help
+        run: dotrun --help
