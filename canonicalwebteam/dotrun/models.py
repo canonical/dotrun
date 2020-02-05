@@ -136,7 +136,7 @@ class Project:
             dependencies = package_settings.get("dependencies", {})
             dependencies.update(package_settings.get("devDependencies", {}))
 
-        package_jsons = glob(f"{self.path}node_modules/*/package.json")
+        package_jsons = glob(f"{self.path}/node_modules/*/package.json")
         packages = {}
 
         # Read package.json dependencies

@@ -17,5 +17,32 @@ jobs:
         run: |
           snapcraft --destructive-mode
           sudo snap install --dangerous *.snap
-      - name: Get help
-        run: dotrun --help
+      - name: Test basic dotrun project
+        run: |
+          dotrun --help | grep '\-\-help'  # Check help command works
+          cd tests/fixtures/yarn-project
+          
+          # Runs
+          dotrun > first-run.txt
+          [ -f .dotrun.json ]  # Check .dotrun.json was created
+          dotrun > second-run.txt
+          dotrun clean > clean.txt
+          [ ! -f .dotrun.json ]  # Check .dotrun.json was removed
+          dotrun > third-run.txt
+          [ -f .dotrun.json ]  # Check .dotrun.json was created again
+
+          # Content tests
+          grep "yarn install" first-run.txt
+          grep "Build: alpha" first-run.txt
+          grep "Serving: omage" first-run.txt
+
+          grep -v "yarn install" second-run.txt
+          grep "Build: alpha" second-run.txt
+          grep "Serving: omage" second-run.txt
+
+          grep "yarn install" third-run.txt
+          grep "Build: alpha" third-run.txt
+          grep "Serving: omage" third-run.txt
+
+          grep "concurrently" .dotrun.json
+          grep "lodash" .dotrun.json
