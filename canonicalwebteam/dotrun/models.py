@@ -145,10 +145,14 @@ class Project:
                 package = json.load(package_contents)
                 packages[package["name"]] = package["version"]
 
+        lock_hash = None
+        if os.path.isfile(os.path.join(self.path, "yarn.lock")):
+            lock_hash = file_md5(os.path.join(self.path, "yarn.lock"))
+
         return {
             "dependencies": dependencies,
             "installed_packages": packages,
-            "lockfile_hash": file_md5(os.path.join(self.path, "yarn.lock")),
+            "lockfile_hash": lock_hash,
         }
 
     def _install_yarn_dependencies(self, force=False):
