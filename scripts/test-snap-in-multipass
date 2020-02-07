@@ -1,0 +1,27 @@
+#! /usr/bin/env bash
+
+set -exuo pipefail
+
+multipass launch -n test-dotrun bionic || echo "Skipping..."
+multipass start test-dotrun
+
+# Install snapcraft
+multipass exec test-dotrun -- sudo snap install snapcraft --classic
+multipass exec test-dotrun -- sudo ln -fs /snap/bin/snapcraft /usr/bin/snapcraft
+
+# Copy files into VM (remove any old files)
+rm -f /tmp/dotrun.tar.gz
+tar -czf /tmp/dotrun.tar.gz .
+multipass transfer /tmp/dotrun.tar.gz test-dotrun:dotrun.tar.gz
+multipass exec test-dotrun -- rm -rf ./dotrun
+multipass exec test-dotrun -- mkdir -p ./dotrun
+multipass exec test-dotrun -- tar -C ./dotrun -xzf dotrun.tar.gz
+
+# Build and install snap
+multipass exec test-dotrun -- rm -rf ./dotrun/dotrun_*.snap
+multipass exec test-dotrun -- sh -c "cd ./dotrun && snapcraft --destructive-mode"
+multipass exec test-dotrun -- sh -c "sudo snap install --dangerous ./dotrun/dotrun_*.snap"
+multipass exec test-dotrun -- sudo ln -fs /snap/bin/dotrun /usr/bin/dotrun
+
+# Run tests against installed snap
+multipass exec test-dotrun -- python3 -m unittest discover --start-directory ./dotrun/tests
