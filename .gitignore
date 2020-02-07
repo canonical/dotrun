@@ -4,8 +4,7 @@
 dist/
 env/
 env*/
-.venv
-.env
+.venv/
 __pycache__/
 *.bz2
 environments/

@@ -24,4 +24,4 @@ multipass exec test-dotrun -- sh -c "sudo snap install --dangerous ./dotrun/dotr
 multipass exec test-dotrun -- sudo ln -fs /snap/bin/dotrun /usr/bin/dotrun
 
 # Run tests against installed snap
-multipass exec test-dotrun -- python3 -m unittest discover --start-directory ./dotrun/tests
+multipass exec test-dotrun -- python3 -m unittest discover --verbose --start-directory ./dotrun/tests

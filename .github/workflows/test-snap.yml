@@ -1,4 +1,4 @@
-name: Yarn test
+name: Test snap
 
 on: [pull_request]
 
@@ -19,4 +19,4 @@ jobs:
           sudo snap install --dangerous dotrun_*.snap
       - name: Run tests
         run: |
-          python3 -m unittest discover --start-directory tests
+          python3 -m unittest discover --verbose --start-directory tests
