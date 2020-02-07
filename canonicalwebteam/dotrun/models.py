@@ -108,14 +108,14 @@ class Project:
                 f"\n\n[ `{' '.join(commands)}` cancelled - exiting ]", "cyan"
             )
             time.sleep(1)
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as call_error:
             cprint(
                 f"\n[ `{' '.join(commands)}` exited with an error status ]",
                 "red",
             )
 
             if exit_on_error:
-                sys.exit(1)
+                sys.exit(call_error.returncode)
 
         print("")
 

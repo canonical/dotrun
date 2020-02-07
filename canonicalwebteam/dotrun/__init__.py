@@ -1,7 +1,13 @@
 #! /usr/bin/env python3
 
 # Standard library
-import argparse
+from argparse import (
+    ArgumentDefaultsHelpFormatter,
+    ArgumentParser,
+    RawTextHelpFormatter,
+    REMAINDER,
+    SUPPRESS,
+)
 import os
 import pkg_resources
 import sys
@@ -12,16 +18,26 @@ from canonicalwebteam.dotrun.models import Project
 
 # Define available commands
 # ===
-cli_parser = argparse.ArgumentParser(
+class RawWithDefaultsFormatter(
+    RawTextHelpFormatter, ArgumentDefaultsHelpFormatter
+):
+    pass
+
+
+cli_parser = ArgumentParser(
     description=(
         "Containerized project-level dependency management and "
         "package.json commands"
-    )
+    ),
+    formatter_class=RawWithDefaultsFormatter,
 )
 
 # Options
 cli_parser.add_argument(
-    "-C", "--directory", help="The directory in which to run commands"
+    "-C",
+    "--directory",
+    help="The directory in which to run commands (default: current directory)",
+    default=SUPPRESS,
 )
 cli_parser.add_argument(
     "-s",
@@ -33,8 +49,11 @@ cli_parser.add_argument(
 cli_parser.add_argument(
     "--env",
     action="append",
-    default=[],
-    help="Environment variables to use when running commands",
+    default=SUPPRESS,
+    help=(
+        "Environment variables to use when running commands.\n"
+        "These will override what's in .env or .env.local"
+    ),
 )
 
 # Main command
@@ -42,9 +61,9 @@ cli_parser.add_argument(
     "command",
     help=(
         "A package.json command to run with `yarn run XXX` inside dotrun.\n"
-        "Simply typing `dotrun` will run `yarn run start`."
+        "Simply typing `dotrun` will run `yarn run start`.\n"
         "\n"
-        "Or a special command - one of:"
+        "Or a special command - one of:\n"
         "- version: Print the version\n"
         "- exec: Execute a command within the dotrun context\n"
         "- install: Reinstall node and python dependencies\n"
@@ -53,7 +72,7 @@ cli_parser.add_argument(
     nargs="?",
     default="start",
 )
-cli_parser.add_argument("remainder", nargs=argparse.REMAINDER)
+cli_parser.add_argument("remainder", nargs=REMAINDER)
 
 
 def cli(args):
@@ -73,19 +92,18 @@ def cli(args):
     # Compile list of environment variables
     env_extra = {}
 
-    for env_string in arguments.env:
-        key, value = env_string.split("=")
-        env_extra[key] = value
+    if "env" in arguments:
+        for env_string in arguments.env:
+            key, value = env_string.split("=")
+            env_extra[key] = value
 
     # Prepare dotrun object
     path = os.getcwd()
 
-    if arguments.directory:
+    if "directory" in arguments:
         path = os.path.abspath(arguments.directory)
 
-    dotrun = Project(
-        path=path, env_extra=env_extra
-    )
+    dotrun = Project(path=path, env_extra=env_extra)
 
     # Process command
 
