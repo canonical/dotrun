@@ -1,6 +1,6 @@
 name: dotrun
 base: core18
-version: '1.0.0-rc-yarn-only'
+version: '1.0.0-rc5'
 summary: A command-line tool for running projects
 description: |
   A command-line tool for running projects
@@ -15,7 +15,7 @@ parts:
 
   yarn:
     plugin: dump
-    source: https://github.com/yarnpkg/yarn/releases/download/v1.16.0/yarn_1.16.0_all.deb
+    source: https://github.com/yarnpkg/yarn/releases/download/v1.22.0/yarn_1.22.0_all.deb
 
   dotrun-module:
     plugin: python
@@ -24,10 +24,12 @@ parts:
 apps:
   dotrun:
     command: dotrun
+    environment:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      LC_CTYPE: C.UTF-8
     plugs:
       - home
       - network
       - network-bind
       - process-control
-    environment:
-      LANG: C.UTF-8

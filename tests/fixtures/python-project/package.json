@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "start": "echo starting...",
+    "serve": "./wsgi.py"
+  }
+}

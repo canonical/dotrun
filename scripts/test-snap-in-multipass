@@ -14,12 +14,14 @@ rm -f /tmp/dotrun.tar.gz
 tar -czf /tmp/dotrun.tar.gz .
 multipass transfer /tmp/dotrun.tar.gz test-dotrun:dotrun.tar.gz
 multipass exec test-dotrun -- rm -rf ./dotrun
-multipass exec test-dotrun -- echo 'export LANG=en_GB.UTF-8' > .bashrc
+multipass exec test-dotrun -- sh -c "echo 'export LANG=en_GB.UTF-8' > .bashrc"
+multipass exec test-dotrun -- sh -c "echo 'export LC_ALL=en_GB.UTF-8' >> .bashrc"
+multipass exec test-dotrun -- sh -c "echo 'export LC_CTYPE=en_GB.UTF-8' >> .bashrc"
 multipass exec test-dotrun -- mkdir -p ./dotrun
 multipass exec test-dotrun -- tar -C ./dotrun -xzf dotrun.tar.gz
 
 # Build and install snap
-multipass exec test-dotrun -- rm -rf ./dotrun/dotrun_*.snap
+multipass exec test-dotrun -- sh -c "rm -rf ./dotrun/dotrun_*.snap"
 multipass exec test-dotrun -- sh -c "cd ./dotrun && snapcraft --destructive-mode"
 multipass exec test-dotrun -- sh -c "sudo snap install --dangerous ./dotrun/dotrun_*.snap"
 multipass exec test-dotrun -- sudo ln -fs /snap/bin/dotrun /usr/bin/dotrun
@@ -28,3 +30,5 @@ multipass exec test-dotrun -- sudo ln -fs /snap/bin/dotrun /usr/bin/dotrun
 multipass exec test-dotrun -- touch .npmrc  # Ensure npmrc file exists, as it may for users
 multipass exec test-dotrun -- pip3 install ipdb  # For debugging tests
 multipass exec test-dotrun -- python3 -m unittest discover --verbose --start-directory ./dotrun/tests
+
+multipass stop test-dotrun
