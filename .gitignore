@@ -18,3 +18,4 @@ yarn-error.log
 .eggs/
 htmlcov/
 .coveragerc
+tests/fixtures/yarn-project/package.json

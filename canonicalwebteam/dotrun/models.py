@@ -196,4 +196,3 @@ class Project:
             self.state["yarn"] = self._get_yarn_state()
         else:
             cprint("up to date", "magenta")
-
