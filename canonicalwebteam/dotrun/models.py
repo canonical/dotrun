@@ -54,6 +54,8 @@ class Project:
         self.statefile_path = f"{self.path}/.dotrun.json"
         self.state = State(self.statefile_path)
         self.env_extra = {}
+        self.pyenv_dir = ".venv"
+        self.pyenv_path = f"{self.path}/{self.pyenv_dir}"
 
         # Check all env values are string format
         for key, value in env_extra.items():
@@ -73,9 +75,12 @@ class Project:
 
     def install(self, force=False):
         """
-        Install dependencies from package.json,
+        Install dependencies from requirements.txt and package.json,
         if there have been any changes detected
         """
+
+        if os.path.isfile(os.path.join(self.path, "requirements.txt")):
+            self._install_python_dependencies(force=force)
 
         self._install_yarn_dependencies(force=force)
 
@@ -90,12 +95,16 @@ class Project:
             cprint(f"- No 'clean' script found in package.json", "magenta")
 
         if os.path.isfile(self.statefile_path):
-            cprint(f"[ Removing `{self.statefile_path}` ]", "cyan")
+            cprint(f"[ Removing `.dotrun.json` state file ]", "cyan")
             os.remove(self.statefile_path)
 
         if os.path.isdir("node_modules"):
-            cprint(f"[ Removing node dependencies (`node_modules`) ]", "cyan")
+            cprint(f"[ Removing `node_modules` ]", "cyan")
             shutil.rmtree("node_modules")
+
+        if os.path.isdir(self.pyenv_path):
+            cprint(f"[ Removing `.venv` python environment ]", "cyan")
+            shutil.rmtree(self.pyenv_path)
 
     def exec(self, commands, exit_on_error=True):
         """
@@ -116,9 +125,21 @@ class Project:
             with open(f"{snap_home}/.yarnrc", "w") as yarnconfig:
                 yarnconfig.write("--no-default-rc true")
 
-        try:
+        if os.path.isfile(f"{self.pyenv_path}/bin/python3"):
+            env["VIRTUAL_ENV"] = self.pyenv_path
+            env["PATH"] = self.pyenv_path + "/bin:" + env["PATH"]
+            env.pop("PYTHONHOME", None)
+
+            cprint(f"\n[ $ {' '.join(commands)} ]", "cyan", end="")
+            cprint(
+                f" ( virtualenv `{self.pyenv_dir}` )\n",
+                "magenta",
+                attrs=["dark"],
+            )
+        else:
             cprint(f"\n[ $ {' '.join(commands)} ]\n", "cyan")
 
+        try:
             result = subprocess.check_call(commands, env=env, cwd=self.path)
         except KeyboardInterrupt:
             cprint(
@@ -194,5 +215,59 @@ class Project:
             self.exec(["yarn", "install"])
 
             self.state["yarn"] = self._get_yarn_state()
+        else:
+            cprint("up to date", "magenta")
+
+    # Python dependencies
+
+    def _get_python_state(self):
+        """
+        Save requirements.txt and installed dependencies state
+        """
+
+        package_dirs = glob(
+            f"{self.pyenv_path}/lib/python*/site-packages/*.*-info"
+        )
+        packages = [os.path.basename(path) for path in package_dirs]
+
+        with open(f"{self.path}/requirements.txt", "r") as requirements_file:
+            requirements = requirements_file.read()
+
+        return {"requirements": requirements, "installed_packages": packages}
+
+    def _install_python_dependencies(self, force=False):
+        """
+        Install python dependencies if anything has changed
+        """
+
+        changes = False
+        new_revision = False
+
+        if self.state["snap_revision"] != os.environ.get("SNAP_REVISION"):
+            self.state["snap_revision"] = os.environ.get("SNAP_REVISION")
+            new_revision = True
+
+        if not os.path.isdir(self.pyenv_path) or new_revision:
+            cprint(
+                f"- Creating python environment: {self.pyenv_dir}", "magenta"
+            )
+            self.exec(["rm", "-rf", self.pyenv_path])
+            self.exec(["virtualenv", "--copies", self.pyenv_path])
+
+        if not force:
+            cprint("- Checking python dependencies ... ", "magenta", end="")
+            current_state = self._get_python_state()
+            previous_state = self.state["python"]
+            changes = current_state != previous_state
+
+        if changes or force:
+            if changes:
+                cprint("changes detected", "magenta")
+            if force:
+                cprint("- Installing python dependencies (forced)", "magenta")
+
+            self.exec(["pip3", "install", "ipdb", "black", "flake8"])
+            self.exec(["pip3", "install", "--requirement", "requirements.txt"])
+            self.state["python"] = self._get_python_state()
         else:
             cprint("up to date", "magenta")

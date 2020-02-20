@@ -82,7 +82,7 @@ class TestYarnProject(unittest.TestCase):
 
     def test_03_updating_dependencies(self):
         """
-        Check running `dotrun` again skips installing
+        Updating dependencies causes reinstallation
         """
 
         # Change "concurrently" version

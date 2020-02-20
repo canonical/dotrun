@@ -19,3 +19,4 @@ yarn-error.log
 htmlcov/
 .coveragerc
 tests/fixtures/yarn-project/package.json
+tests/fixtures/python-project/requirements.txt

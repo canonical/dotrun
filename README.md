@@ -1,17 +1,80 @@
+![dotrun](https://assets.ubuntu.com/v1/9dcb3655-dotrun.png?w=200)
+
+# A tool for developing Node.js & Python projects
+
+`dotrun` makes use of [snap confinement](https://snapcraft.io/docs/snap-confinement) to provide a predictable sandbox for running Node and Python projects.
+
+Features:
+
+- Make use of standard `package.json` script entrypoints
+- Detect changes in `package.json` and only run `yarn install` when needed
+- Detect changes in `requirements.txt` and only run `pip3 install` when needed
+- Run scripts using environment variables from `.env` and `.env.local` files
+
+## Usage
+
+``` bash
+$ dotrun          # Install dependencies and run the `start` script from package.json
+$ dotrun clean    # Delete `node_modules`, `.venv`, `.dotrun.json`, and run `yarn run clean`
+$ dotrun install  # Force install node and python dependencies
+$ dotrun exec     # Start a shell inside the dotrun environment
+$ dotrun exec {command}  # Run {command} inside the dotrun environment
+$ dotrun {script-name}   # Install dependencies and run `yarn run {script-name}`
+$ dotrun -s {script}  # Run {script} but skip installing dependencies
+$ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
+```
+
 ## Installation
 
+### Ubuntu
+
 ``` bash
-snap install --beta --devmode dotrun
+snap install dotrun
 ```
 
-OR
+### MacOS
+
+First install [multipass](https://multipass.run/), then run:
 
 ``` bash
+# Create multipass instance called "dotrun"
 multipass launch -n dotrun bionic
-multipass exec dotrun -- sudo snap install --beta --devmode dotrun
-multipass mount $HOME dotrun
-alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C `pwd`'
+
+# Install dotrun snap
+multipass exec dotrun -- sudo snap install dotrun
+
+# Share your home directory with the dotrun multipass VM
+multipass mount $HOME dotrun:/home/ubuntu/share$HOME
+
+# Set up alias in your profile
+echo "alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C \""'/home/ubuntu/share$(pwd)'"\"'" >> ~/.profile
+source ~/.profile
 ```
+
+## Converting existing projects
+
+Although you should be able to use `dotrun` out-of-the-box in most of our pure-Node or Python projects as follows:
+
+``` bash
+dotrun build
+dotrun serve
+```
+
+To fully support it you should do the following:
+
+- Add `.dotrun.json` and `.venv` to `.gitignore`
+- Swap `0.0.0.0` with `$(hostname -I)` in `package.json`
+  - This will allow macOS users to click on the link in the command-line output to find the development server
+- Create a `start` script in `package.json` to do everything needed to set up local development. E.g.:
+  `"start": "concurrently 'yarn run watch' 'yarn run serve'"`
+  - The above command makes use of [concurrently](https://www.npmjs.com/package/concurrently) - you might want to consider this
+- Older versions of Gunicorn [are incompatible with](https://forum.snapcraft.io/t/problems-packaging-app-that-uses-gunicorn/11749) strict confinement so we need Gunicorn >= 20
+  - The update [landed in Talisker](https://github.com/canonical-ols/talisker/pull/502) but at the time of writing hasn't made it into a new version
+  - If there's no new version of Talisker, simply add `gunicorn==20.0.4` to the bottom of `requirements.txt`
+
+These steps can be completed without effecting the old `./run` script, which should continue working.
+
+However, once you're ready to completely switch over to `dotrun`, simply go ahead and remove the `run` script.
 
 ## Testing
 
@@ -43,6 +106,6 @@ scripts/test-snap-using-multipass
 This runs the same tests in the `tests` directory against an actual snap installed into multipass.
 
 
-### GitHub actions
+### Automated tests of pull requests
 
-We've [set up GitHub actions](.github/workflows/test-snap.yml) to build the snap and fully test it using the `tests`, similar to the "multipass" solution above. This will run against every pull request.
+[The "PR" action](.github/workflows/pr.yml) builds the snap and runs the `tests`, similar to the "multipass" solution above. This will run against every pull request.
