@@ -1,12 +1,13 @@
 name: dotrun
 base: core18
-version: '1.0.0-rc5'
-summary: A command-line tool for running projects
+version: '1.0.0'
+summary: A command-line tool for running Node.js and Python projects
 description: |
-  A command-line tool for running projects
+  A command-line tool for running Node.js and Python projects
+  from Canonical's webteam
 
 grade: stable
-confinement: strict
+confinement: devmode
 
 parts:
   node:
@@ -20,6 +21,16 @@ parts:
   dotrun-module:
     plugin: python
     source: .
+    stage-packages:
+      - curl
+      - git
+      - libjpeg-progs
+      - libmagickwand-dev
+      - libpng-dev
+      - libpq-dev
+      - libsodium-dev
+      - optipng
+      - zlib1g-dev
 
 apps:
   dotrun:
@@ -28,8 +39,3 @@ apps:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
-    plugs:
-      - home
-      - network
-      - network-bind
-      - process-control

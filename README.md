@@ -1,15 +1,18 @@
 ![dotrun](https://assets.ubuntu.com/v1/9dcb3655-dotrun.png?w=200)
 
-# A tool for developing Node.js & Python projects
+# A tool for developing Node.js and Python projects
 
 `dotrun` makes use of [snap confinement](https://snapcraft.io/docs/snap-confinement) to provide a predictable sandbox for running Node and Python projects.
 
 Features:
 
-- Make use of standard `package.json` script entrypoints
+- Make use of standard `package.json` script entrypoints:
+  * `dotrun` runs `yarn run start` within the snap confinement
+  * `dotrun foo` runs `yarn run foo` within the snap confinement
 - Detect changes in `package.json` and only run `yarn install` when needed
 - Detect changes in `requirements.txt` and only run `pip3 install` when needed
 - Run scripts using environment variables from `.env` and `.env.local` files
+- Keep python dependencies in `.venv` in the project folder for easy access
 
 ## Usage
 
@@ -18,9 +21,9 @@ $ dotrun          # Install dependencies and run the `start` script from package
 $ dotrun clean    # Delete `node_modules`, `.venv`, `.dotrun.json`, and run `yarn run clean`
 $ dotrun install  # Force install node and python dependencies
 $ dotrun exec     # Start a shell inside the dotrun environment
-$ dotrun exec {command}  # Run {command} inside the dotrun environment
-$ dotrun {script-name}   # Install dependencies and run `yarn run {script-name}`
-$ dotrun -s {script}  # Run {script} but skip installing dependencies
+$ dotrun exec {command}          # Run {command} inside the dotrun environment
+$ dotrun {script-name}           # Install dependencies and run `yarn run {script-name}`
+$ dotrun -s {script}             # Run {script} but skip installing dependencies
 $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 ```
 
@@ -29,7 +32,9 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 ### Ubuntu
 
 ``` bash
-snap install dotrun
+sudo snap install --beta --devmode dotrun
+echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun
+sudo chmod +x /etc/cron.hourly/refresh-dotrun
 ```
 
 ### MacOS
@@ -40,14 +45,16 @@ First install [multipass](https://multipass.run/), then run:
 # Create multipass instance called "dotrun"
 multipass launch -n dotrun bionic
 
-# Install dotrun snap
-multipass exec dotrun -- sudo snap install dotrun
+# Install dotrun snap, check for updates hourly
+multipass exec dotrun -- sudo snap install --beta --devmode dotrun
+multipass exec dotrun -- sh -c "echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun"
+multipass exec dotrun -- sudo chmod +x /etc/cron.hourly/refresh-dotrun
 
 # Share your home directory with the dotrun multipass VM
-multipass mount $HOME dotrun:/home/ubuntu/share$HOME
+multipass mount $HOME dotrun
 
 # Set up alias in your profile
-echo "alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C \""'/home/ubuntu/share$(pwd)'"\"'" >> ~/.profile
+echo "alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C \""'$(pwd)'"\"'" >> ~/.profile
 source ~/.profile
 ```
 
@@ -63,7 +70,7 @@ dotrun serve
 To fully support it you should do the following:
 
 - Add `.dotrun.json` and `.venv` to `.gitignore`
-- Swap `0.0.0.0` with `$(hostname -I)` in `package.json`
+- Swap `0.0.0.0` with `$(hostname -i)` in `package.json`
   - This will allow macOS users to click on the link in the command-line output to find the development server
 - Create a `start` script in `package.json` to do everything needed to set up local development. E.g.:
   `"start": "concurrently 'yarn run watch' 'yarn run serve'"`
