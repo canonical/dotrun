@@ -241,18 +241,26 @@ class Project:
         """
 
         changes = False
-        new_revision = False
 
-        if self.state["snap_revision"] != os.environ.get("SNAP_REVISION"):
-            self.state["snap_revision"] = os.environ.get("SNAP_REVISION")
-            new_revision = True
-
-        if not os.path.isdir(self.pyenv_path) or new_revision:
+        if not os.path.isdir(self.pyenv_path):
             cprint(
                 f"- Creating python environment: {self.pyenv_dir}", "magenta"
             )
-            self.exec(["rm", "-rf", self.pyenv_path])
-            self.exec(["virtualenv", "--copies", self.pyenv_path])
+            python_path = shutil.which("python3")
+            if "SNAP_REVISION" in os.environ:
+                python_path = python_path.replace(
+                    "/snap/dotrun/" + os.environ["SNAP_REVISION"],
+                    "/snap/dotrun/current",
+                )
+            self.exec(
+                [
+                    "virtualenv",
+                    "--copies",
+                    "--python",
+                    python_path,
+                    self.pyenv_path,
+                ]
+            )
 
         if not force:
             cprint("- Checking python dependencies ... ", "magenta", end="")

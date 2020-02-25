@@ -1,6 +1,6 @@
 ![dotrun](https://assets.ubuntu.com/v1/9dcb3655-dotrun.png?w=200)
 
-# A tool for developing Node.js & Python projects
+# A tool for developing Node.js and Python projects
 
 `dotrun` makes use of [snap confinement](https://snapcraft.io/docs/snap-confinement) to provide a predictable sandbox for running Node and Python projects.
 
@@ -29,7 +29,9 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 ### Ubuntu
 
 ``` bash
-snap install dotrun
+sudo snap install --beta --devmode dotrun
+echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun
+sudo chmod +x /etc/cron.hourly/refresh-dotrun
 ```
 
 ### MacOS
@@ -40,14 +42,16 @@ First install [multipass](https://multipass.run/), then run:
 # Create multipass instance called "dotrun"
 multipass launch -n dotrun bionic
 
-# Install dotrun snap
-multipass exec dotrun -- sudo snap install dotrun
+# Install dotrun snap, check for updates hourly
+multipass exec dotrun -- sudo snap install --beta --devmode dotrun
+multipass exec dotrun -- sh -c "echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun"
+multipass exec dotrun -- sudo chmod +x /etc/cron.hourly/refresh-dotrun
 
 # Share your home directory with the dotrun multipass VM
-multipass mount $HOME dotrun:/home/ubuntu/share$HOME
+multipass mount $HOME dotrun
 
 # Set up alias in your profile
-echo "alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C \""'/home/ubuntu/share$(pwd)'"\"'" >> ~/.profile
+echo "alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C \""'$(pwd)'"\"'" >> ~/.profile
 source ~/.profile
 ```
 
