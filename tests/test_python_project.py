@@ -185,5 +185,5 @@ class TestPythonProject(unittest.TestCase):
             ["dotrun", "clean"], stderr=STDOUT
         ).decode()
 
-        self.assertIn("No 'clean' script found", clean_output)
+        self.assertIn("'clean' script not found", clean_output)
         self.assertFalse(os.path.isdir(".venv"))

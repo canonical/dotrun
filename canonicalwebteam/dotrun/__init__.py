@@ -128,7 +128,7 @@ def cli(args=None):
 
     # By default, run a yarn script
     if dotrun.has_script(command):
-        return dotrun.exec(["yarn", "run", command] + arguments.remainder)
+        return dotrun.yarn_run(command, arguments.remainder)
     else:
         cprint(
             f"\n[ `{command}` script not found in `package.json` ]\n", "red"

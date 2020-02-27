@@ -15,7 +15,7 @@ jobs:
       - name: Install dotrun snap
         run: |
           snapcraft --destructive-mode
-          sudo snap install --dangerous dotrun_*.snap
+          sudo snap install --devmode --dangerous dotrun_*.snap
       - name: Run tests
         run: |
           pip3 install pexpect
