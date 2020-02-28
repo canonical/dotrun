@@ -70,7 +70,7 @@ dotrun serve
 To fully support it you should do the following:
 
 - Add `.dotrun.json` and `.venv` to `.gitignore`
-- Swap `0.0.0.0` with `$(hostname -i)` in `package.json`
+- Swap `0.0.0.0` with `$(hostname -I | awk '{print $1;}')` in `package.json`
   - This will allow macOS users to click on the link in the command-line output to find the development server
 - Create a `start` script in `package.json` to do everything needed to set up local development. E.g.:
   `"start": "concurrently 'yarn run watch' 'yarn run serve'"`
