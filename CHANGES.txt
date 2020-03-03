@@ -2,3 +2,5 @@ v0.1.1, 2019-06-11 -- Support for dotrun.toml and --env
 v0.2.2, 2019-06-11 -- Support for `dotrun serve --watch`
 v0.2.3, 2019-07-30 -- Fix some bugs
 v0.2.4, 2019-07-30 -- Fix poetry dependency install
+v1.0.0, 2020-02-25 -- Switch to devmode so black works
+v1.1.0, 2020-03-03 -- Re-enable strict mode with semwraplib.so

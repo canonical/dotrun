@@ -1,13 +1,13 @@
 name: dotrun
 base: core18
-version: '1.0.0'
+version: '1.1.0'
 summary: A command-line tool for running Node.js and Python projects
 description: |
   A command-line tool for running Node.js and Python projects
   from Canonical's webteam
 
 grade: stable
-confinement: devmode
+confinement: strict
 
 parts:
   node:
@@ -18,9 +18,18 @@ parts:
     plugin: dump
     source: https://github.com/yarnpkg/yarn/releases/download/v1.22.0/yarn_1.22.0_all.deb
 
+  semwraplib:
+    plugin: dump
+    source: src
+    override-build: |
+      mkdir -p ../install/bin
+      gcc -g -O0 -Wall -Wstrict-prototypes -fPIC -shared lib.c -o ../install/bin/semwraplib.so -ldl
+    build-packages:
+    - build-essential
+
   dotrun-module:
     plugin: python
-    source: .
+    source: src
     stage-packages:
       - curl
       - git
@@ -39,3 +48,9 @@ apps:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
+      LD_PRELOAD: $SNAP/bin/semwraplib.so
+    plugs:
+      - home
+      - network
+      - network-bind
+      - process-control

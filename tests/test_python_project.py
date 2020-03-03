@@ -174,7 +174,19 @@ class TestPythonProject(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(response.text, "Serving...")
 
-    def test_08_clean(self):
+    def test_08_black(self):
+        """
+        Check that black runs successfully within the snap
+        """
+
+        black_output = check_output(
+            ["dotrun", "exec", "black", "--line-length", "79", "."],
+            stderr=STDOUT,
+        ).decode()
+
+        self.assertIn("2 files left unchanged.", black_output)
+
+    def test_09_clean(self):
         """
         Check `dotrun clean` removes artifacts
         """

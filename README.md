@@ -32,30 +32,7 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 ### Ubuntu
 
 ``` bash
-sudo snap install --beta --devmode dotrun
-echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun
-sudo chmod +x /etc/cron.hourly/refresh-dotrun
-```
-
-### MacOS
-
-First install [multipass](https://multipass.run/), then run:
-
-``` bash
-# Create multipass instance called "dotrun"
-multipass launch -n dotrun bionic
-
-# Install dotrun snap, check for updates hourly
-multipass exec dotrun -- sudo snap install --beta --devmode dotrun
-multipass exec dotrun -- sh -c "echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun"
-multipass exec dotrun -- sudo chmod +x /etc/cron.hourly/refresh-dotrun
-
-# Share your home directory with the dotrun multipass VM
-multipass mount $HOME dotrun
-
-# Set up alias in your profile
-echo "alias dotrun='multipass exec dotrun -- /snap/bin/dotrun -C \""'$(pwd)'"\"'" >> ~/.profile
-source ~/.profile
+sudo snap install dotrun
 ```
 
 ## Converting existing projects
