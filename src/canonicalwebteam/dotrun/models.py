@@ -304,7 +304,6 @@ class Project:
             if force:
                 self.log.note("Installing python dependencies (forced)")
 
-            self.exec(["pip3", "install", "ipdb", "black", "flake8"])
             self.exec(["pip3", "install", "--requirement", "requirements.txt"])
             self.state["python"] = self._get_python_state()
         else:
