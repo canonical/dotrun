@@ -20,7 +20,7 @@ parts:
 
   semwraplib:
     plugin: dump
-    source: .
+    source: src
     override-build: |
       mkdir -p ../install/bin
       gcc -g -O0 -Wall -Wstrict-prototypes -fPIC -shared lib.c -o ../install/bin/semwraplib.so -ldl
@@ -29,7 +29,7 @@ parts:
 
   dotrun-module:
     plugin: python
-    source: .
+    source: src
     stage-packages:
       - curl
       - git

@@ -184,7 +184,7 @@ class TestPythonProject(unittest.TestCase):
             stderr=STDOUT,
         ).decode()
 
-        self.assertIn("1 file left unchanged.", black_output)
+        self.assertIn("2 files left unchanged.", black_output)
 
     def test_09_clean(self):
         """
