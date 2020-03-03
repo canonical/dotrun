@@ -13,6 +13,13 @@ setup(
     name="canonicalwebteam.dotrun",
     version="0.0.0",
     packages=["canonicalwebteam.dotrun"],
-    install_requires=["ipdb", "termcolor", "virtualenv", "python-dotenv"],
+    install_requires=[
+        "ipdb",
+        "black",
+        "flake8",
+        "termcolor",
+        "virtualenv",
+        "python-dotenv",
+    ],
     entry_points={"console_scripts": ["dotrun = canonicalwebteam.dotrun:cli"]},
 )
