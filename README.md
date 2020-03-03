@@ -32,9 +32,7 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 ### Ubuntu
 
 ``` bash
-sudo snap install --beta --devmode dotrun
-echo 'snap refresh --devmode dotrun' | sudo tee -a /etc/cron.hourly/refresh-dotrun
-sudo chmod +x /etc/cron.hourly/refresh-dotrun
+sudo snap install dotrun
 ```
 
 ### MacOS

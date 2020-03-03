@@ -7,7 +7,7 @@ description: |
   from Canonical's webteam
 
 grade: stable
-confinement: devmode
+confinement: strict
 
 parts:
   node:
@@ -17,6 +17,15 @@ parts:
   yarn:
     plugin: dump
     source: https://github.com/yarnpkg/yarn/releases/download/v1.22.0/yarn_1.22.0_all.deb
+
+  semwraplib:
+    plugin: dump
+    source: .
+    override-build: |
+      mkdir -p ../install/bin
+      gcc -g -O0 -Wall -Wstrict-prototypes -fPIC -shared lib.c -o ../install/bin/semwraplib.so -ldl
+    build-packages:
+    - build-essential
 
   dotrun-module:
     plugin: python
@@ -39,3 +48,9 @@ apps:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
+      LD_PRELOAD: $SNAP/bin/semwraplib.so
+    plugs:
+      - home
+      - network
+      - network-bind
+      - process-control

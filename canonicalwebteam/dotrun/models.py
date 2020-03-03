@@ -54,7 +54,7 @@ class Logger:
     def step(self, title, aside=None):
         if aside:
             cprint(f"\n[ {title} ]", "cyan", end="")
-            cprint(f"( {aside} )\n", "magenta", attrs=["dark"])
+            cprint(f" ( {aside} )\n", "magenta", attrs=["dark"])
         else:
             cprint(f"\n[ {title} ]\n", "cyan")
 
