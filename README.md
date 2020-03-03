@@ -35,6 +35,14 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 sudo snap install dotrun
 ```
 
+### MacOS
+
+On MacOS, `dotrun` should be installed and run inside [a multipass VM](https://multipass.run/), using `sudo snap install dotrun` as above.
+
+Given that file access over a virtual network share [is incredibly slow](https://forums.docker.com/t/file-access-in-mounted-volumes-extremely-slow-cpu-bound/8076) in MacOS, it is recommended to keep your project files inside the multipass VM directly and then share them with your host system from there if you want to open them in a graphical editor.
+
+See @hatched's [guide](https://fromanegg.com/post/2020/02/28/use-ubuntu-on-mac-os-with-multipass/) for how to achieve this setup.
+
 ## Converting existing projects
 
 You should be able to use `dotrun` out-of-the-box in most of our pure-Node or Python projects as follows:
