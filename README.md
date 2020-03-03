@@ -37,12 +37,18 @@ sudo snap install dotrun
 
 ## Converting existing projects
 
-Although you should be able to use `dotrun` out-of-the-box in most of our pure-Node or Python projects as follows:
+You should be able to use `dotrun` out-of-the-box in most of our pure-Node or Python projects as follows:
 
 ``` bash
 dotrun build
 dotrun serve
 ```
+
+**Gunicorn support**
+
+If the project uses Gunicorn, you will need to make sure it's using version 20 or later.
+
+**Updating projects**
 
 To fully support it you should do the following:
 
