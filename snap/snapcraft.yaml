@@ -22,8 +22,8 @@ parts:
     plugin: dump
     source: src
     override-build: |
-      mkdir -p ../install/bin
-      gcc -g -O0 -Wall -Wstrict-prototypes -fPIC -shared lib.c -o ../install/bin/semwraplib.so -ldl
+      mkdir -p $SNAPCRAFT_PART_INSTALL/lib
+      gcc -g -O0 -Wall -Wstrict-prototypes -fPIC -shared lib.c -o $SNAPCRAFT_PART_INSTALL/lib/semwraplib.so -ldl
     build-packages:
     - build-essential
 
@@ -48,7 +48,7 @@ apps:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
-      LD_PRELOAD: $SNAP/bin/semwraplib.so
+      LD_PRELOAD: $SNAP/lib/semwraplib.so
     plugs:
       - home
       - network
