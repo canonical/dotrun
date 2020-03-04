@@ -52,7 +52,7 @@ dotrun build
 dotrun serve
 ```
 
-A caveat to this for our Python website projects is that `dotrun` will only work with [Gunicorn](https://pypi.org/project/gunicorn/) >= `20.0.0`. To achieve this, our projects should upgrade to using [Talisker](https://pypi.org/project/talisker/) `0.16.0` or greater.
+A caveat to this for our Python website projects is that `dotrun` will only work with [Gunicorn](https://pypi.org/project/gunicorn/) >= `20.0.0`. To achieve this, our projects should upgrade to using at least version `0.4.3` of [flask-base](https://github.com/canonical-web-and-design/canonicalwebteam.flask-base/).
 
 **Updating projects**
 
