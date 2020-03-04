@@ -63,7 +63,7 @@ To fully support it you should do the following:
 - Swap `0.0.0.0` with `$(hostname -I | awk '{print $1;}')` in `package.json`
   - This will allow macOS users to click on the link in the command-line output to find the development server
 - Create a `start` script in `package.json` to do everything needed to set up local development. E.g.:
-  `"start": "concurrently 'yarn run watch' 'yarn run serve'"`
+  `"start": "concurrently --raw 'yarn run watch' 'yarn run serve'"`
   - The above command makes use of [concurrently](https://www.npmjs.com/package/concurrently) - you might want to consider this
 - Older versions of Gunicorn [are incompatible with](https://forum.snapcraft.io/t/problems-packaging-app-that-uses-gunicorn/11749) strict confinement so we need Gunicorn >= 20
   - The update [landed in Talisker](https://github.com/canonical-ols/talisker/pull/502) but at the time of writing hasn't made it into a new version
