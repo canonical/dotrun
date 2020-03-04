@@ -45,21 +45,20 @@ See @hatched's [guide](https://fromanegg.com/post/2020/02/28/use-ubuntu-on-mac-o
 
 ## Converting existing projects
 
-You should be able to use `dotrun` out-of-the-box in most of our pure-Node or Python projects as follows:
+On the whole, our existing projects should run out of the box with:
 
 ``` bash
 dotrun build
 dotrun serve
 ```
 
-**Gunicorn support**
-
-If the project uses Gunicorn, you will need to make sure it's using version 20 or later.
+A caveat to this for our Python website projects is that `dotrun` will only work with [Gunicorn](https://pypi.org/project/gunicorn/) >= `20.0.0`. To achieve this, our projects should upgrade to using [Talisker](https://pypi.org/project/talisker/) `0.16.0` or greater.
 
 **Updating projects**
 
 To fully support it you should do the following:
 
+- For Python projects, ensure [Talisker](https://pypi.org/project/talisker/) is at `0.16.0` or greater in `requirements.txt`
 - Add `.dotrun.json` and `.venv` to `.gitignore`
 - Swap `0.0.0.0` with `$(hostname -I | awk '{print $1;}')` in `package.json`
   - This will allow macOS users to click on the link in the command-line output to find the development server
