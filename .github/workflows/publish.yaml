@@ -1,9 +1,11 @@
 name: Publish
 
-on:
-  push:
-    branches:
-      - master
+on: [pull_request]
+
+# on:
+#   push:
+#     branches:
+#       - master
 
 jobs:
   build-and-publish:
@@ -11,6 +13,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+
+    - name: Check for new version
+      run: |
+        current_version=$(curl -s -H 'Snap-Device-Series: 16' https://api.snapcraft.io/v2/snaps/info/dotrun | jq -r '.["channel-map"][0]["version"]')
+        new_version=$(python -c 'import yaml; print(yaml.load(open("snap/snapcraft.yaml"))["version"])')
+        if [ "$current_version" = "$new_version" ]; then
+          echo "Version $current_version already published."
+          exit 1
+        else
+          echo "Version $new_version is newer than $current_version, proceeding."
+        fi
 
     - name: Install Snapcraft
       run: |
@@ -24,6 +37,9 @@ jobs:
 
     - name: Publish snap
       run: |
-        mkdir .snapcraft
-        echo $SNAPCRAFT_LOGIN_FILE | base64 --decode --ignore-garbage > .snapcraft/snapcraft.cfg
+        new_version=$(curl -s -H 'Snap-Device-Series: 16' https://api.snapcraft.io/v2/snaps/info/dotrun | jq -r '.["channel-map"][0]["version"]')
+        echo "$SNAPCRAFT_LOGIN_FILE" | base64 --decode --ignore-garbage > snapcraft.login
+        snapcraft login --with snapcraft.login
         snapcraft push *.snap --release stable
+      env:
+        SNAPCRAFT_LOGIN_FILE: ${{ secrets.SNAPCRAFT_LOGIN_FILE }}
