@@ -8,14 +8,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+
       - name: Install Snapcraft
         run: |
           sudo snap install snapcraft --classic
           sudo chown root:root /
+
       - name: Install dotrun snap
         run: |
           snapcraft --destructive-mode
-          sudo snap install --devmode --dangerous dotrun_*.snap
+          sudo snap install --dangerous dotrun_*.snap
+
       - name: Run tests
         run: |
           pip3 install pexpect

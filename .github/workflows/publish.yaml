@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install Snapcraft
+      run: |
+        sudo snap install snapcraft --classic
+        sudo chown root:root /
+
+    - name: Build dotrun snap
+      run: |
+        snapcraft --destructive-mode
+        sudo snap install --dangerous *.snap
+
+    - name: Publish snap
+      run: |
+        mkdir .snapcraft
+        echo $SNAPCRAFT_LOGIN_FILE | base64 --decode --ignore-garbage > .snapcraft/snapcraft.cfg
+        snapcraft push *.snap --release stable
