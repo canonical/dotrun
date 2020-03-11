@@ -33,7 +33,10 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ``` bash
 sudo snap install dotrun
+sudo snap connect dotrun:npmrc
 ```
+
+Note: The `snap connect dotrun:npmrc` line gives the snap access to read the `~/.npmrc` and `~/.yarnrc` files in your home directory. This is only necessary if you have these files on your system, but if they do exist, the snap will fail to run `yarn` unless it's given access.
 
 ### MacOS
 
