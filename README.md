@@ -40,7 +40,7 @@ Note: The `snap connect dotrun:npmrc` line gives the snap access to read the `~/
 
 ### MacOS
 
-On MacOS, `dotrun` should be installed and run inside [a multipass VM](https://multipass.run/), using `sudo snap install dotrun` as above.
+On MacOS, `dotrun` should be installed and run inside [a multipass VM](https://multipass.run/), using `sudo snap install dotrun` as above. Any server running within the multipass VM will then be available at the VM's IP address, which can be obtained from `multipass list`.
 
 Given that file access over a virtual network share [is incredibly slow](https://forums.docker.com/t/file-access-in-mounted-volumes-extremely-slow-cpu-bound/8076) in MacOS, it is recommended to keep your project files inside the multipass VM directly and then share them with your host system from there if you want to open them in a graphical editor.
 
@@ -63,8 +63,6 @@ To fully support it you should do the following:
 
 - For Python projects, ensure [Talisker](https://pypi.org/project/talisker/) is at `0.16.0` or greater in `requirements.txt`
 - Add `.dotrun.json` and `.venv` to `.gitignore`
-- Swap `0.0.0.0` with `$(hostname -I | awk '{print $1;}')` in `package.json`
-  - This will allow macOS users to click on the link in the command-line output to find the development server
 - Create a `start` script in `package.json` to do everything needed to set up local development. E.g.:
   `"start": "concurrently --raw 'yarn run watch' 'yarn run serve'"`
   - The above command makes use of [concurrently](https://www.npmjs.com/package/concurrently) - you might want to consider this
