@@ -72,6 +72,7 @@ cli_parser.add_argument(
         " within the dotrun context\n"
         "- install: Reinstall node and python dependencies\n"
         "- clean: Run `yarn run clean` and remove all dotrun files\n"
+        "- clean-cache: Delete the snap's cache, including yarn & pip caches\n"
     ),
     nargs="?",
     default="start",
@@ -116,6 +117,9 @@ def cli(args=None):
     # Clean runs before install
     if command == "clean":
         return dotrun.clean()
+
+    if command == "clean-cache":
+        return dotrun.exec(["rm", "-rf", f"{os.environ['HOME']}/.cache"])
 
     if command == "exec":
         return dotrun.exec(arguments.remainder or ["bash"])
