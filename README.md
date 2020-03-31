@@ -7,8 +7,8 @@
 Features:
 
 - Make use of standard `package.json` script entrypoints:
-  * `dotrun` runs `yarn run start` within the snap confinement
-  * `dotrun foo` runs `yarn run foo` within the snap confinement
+  - `dotrun` runs `yarn run start` within the snap confinement
+  - `dotrun foo` runs `yarn run foo` within the snap confinement
 - Detect changes in `package.json` and only run `yarn install` when needed
 - Detect changes in `requirements.txt` and only run `pip3 install` when needed
 - Run scripts using environment variables from `.env` and `.env.local` files
@@ -16,7 +16,7 @@ Features:
 
 ## Usage
 
-``` bash
+```bash
 $ dotrun          # Install dependencies and run the `start` script from package.json
 $ dotrun clean    # Delete `node_modules`, `.venv`, `.dotrun.json`, and run `yarn run clean`
 $ dotrun install  # Force install node and python dependencies
@@ -31,13 +31,17 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ### Ubuntu
 
-``` bash
+```bash
 sudo snap install dotrun
+sudo snap connect dotrun:dot-npmrc
+sudo snap connect dotrun:dot-yarnrc
 ```
+
+Note: The `dotrun:dot-npmrc` and `dotrun:dot-yarnrc` [plugs](https://snapcraft.io/docs/interface-management) gives the snap access to read the `~/.npmrc` and `~/.yarnrc` files in your home directory. This is only necessary if you have these files on your system, but if they do exist, the snap will fail to run `yarn` unless it's given access.
 
 ### MacOS
 
-On MacOS, `dotrun` should be installed and run inside [a multipass VM](https://multipass.run/), using `sudo snap install dotrun` as above.
+On MacOS, `dotrun` should be installed and run inside [a multipass VM](https://multipass.run/), using `sudo snap install dotrun` as above. Any server running within the multipass VM will then be available at the VM's IP address, which can be obtained from `multipass list`.
 
 Given that file access over a virtual network share [is incredibly slow](https://forums.docker.com/t/file-access-in-mounted-volumes-extremely-slow-cpu-bound/8076) in MacOS, it is recommended to keep your project files inside the multipass VM directly and then share them with your host system from there if you want to open them in a graphical editor.
 
@@ -47,7 +51,7 @@ See @hatched's [guide](https://fromanegg.com/post/2020/02/28/use-ubuntu-on-mac-o
 
 On the whole, our existing projects should run out of the box with:
 
-``` bash
+```bash
 dotrun build
 dotrun serve
 ```
@@ -60,8 +64,6 @@ To fully support it you should do the following:
 
 - For Python projects, ensure [Talisker](https://pypi.org/project/talisker/) is at `0.16.0` or greater in `requirements.txt`
 - Add `.dotrun.json` and `.venv` to `.gitignore`
-- Swap `0.0.0.0` with `$(hostname -I | awk '{print $1;}')` in `package.json`
-  - This will allow macOS users to click on the link in the command-line output to find the development server
 - Create a `start` script in `package.json` to do everything needed to set up local development. E.g.:
   `"start": "concurrently --raw 'yarn run watch' 'yarn run serve'"`
   - The above command makes use of [concurrently](https://www.npmjs.com/package/concurrently) - you might want to consider this
@@ -83,7 +85,7 @@ These tests can be run against the current codebase in a couple of different way
 
 This is the quickest way to test the code, but it's not as complete as it won't find error that might relate to the snap confinement.
 
-``` bash
+```bash
 python3 -m venv .venv  # Create a python environment for testing
 source .venv/bin/activate
 pip3 install -e .  # Install the dotrun module as a python package
@@ -96,12 +98,11 @@ To do a complete test, it's wise to build the snap from the current codebase and
 
 If you have [multipass](https://multipass.run/) installed, you can do this using multipass for confinement pretty simply:
 
-``` bash
+```bash
 scripts/test-snap-using-multipass
 ```
 
 This runs the same tests in the `tests` directory against an actual snap installed into multipass.
-
 
 ### Automated tests of pull requests
 

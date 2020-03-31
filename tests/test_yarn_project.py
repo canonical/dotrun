@@ -1,6 +1,7 @@
 # Standard library
 import json
 import os
+import pexpect
 import shutil
 import unittest
 from subprocess import check_output, STDOUT, CalledProcessError
@@ -174,7 +175,19 @@ class TestYarnProject(unittest.TestCase):
             "`start` script not found", context.exception.output.decode()
         )
 
-    def test_08_clean(self):
+    def test_08_chained_commands(self):
+        """
+        Check chained '&&'  yarn commands inside package.json
+        succeed without complaining about .npmrc
+        """
+
+        chain = pexpect.spawn("dotrun chain", timeout=10)
+        chain.expect(pexpect.EOF)
+        chain.close()
+
+        self.assertEqual(chain.exitstatus, 0)
+
+    def test_09_clean(self):
         """
         Check `dotrun clean` removes artifacts
         """

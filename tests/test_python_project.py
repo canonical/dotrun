@@ -199,3 +199,31 @@ class TestPythonProject(unittest.TestCase):
 
         self.assertIn("'clean' script not found", clean_output)
         self.assertFalse(os.path.isdir(".venv"))
+
+    def test_06_clean_cache(self):
+        """
+        Check `clean-cache` cleans the cache,
+        and that install still works afterwards
+        """
+
+        dotrun_path = check_output(["which", "dotrun"])
+        dotrun_home = os.environ["HOME"]
+        if dotrun_path.decode().startswith("/snap"):
+            dotrun_home = f"{os.environ['HOME']}/snap/dotrun/current/"
+
+        # Check we have pip and yarn caches
+        self.assertTrue(os.path.isdir(f"{dotrun_home}/.cache/pip"))
+        self.assertTrue(os.path.isdir(f"{dotrun_home}/.cache/yarn"))
+
+        # Clean the cache
+        check_output(["dotrun", "clean-cache"])
+
+        # Cache directory is gone
+        self.assertFalse(os.path.isdir(f"{dotrun_home}/.cache"))
+
+        # We can still install
+        install_output = check_output(
+            ["dotrun", "install"], stderr=STDOUT
+        ).decode()
+
+        self.assertIn("pip3 install", install_output)

@@ -151,14 +151,6 @@ class Project:
         env = os.environ
         env.update(self.env_extra)
 
-        # This is kinda nuts, but adding this line to `.yarnrc` before
-        # we run yarn is actually the only way
-        # to avoid an error about access to /home/{user}/.npmrc
-        snap_home = os.environ.get("SNAP_USER_DATA")
-        if snap_home:
-            with open(f"{snap_home}/.yarnrc", "w") as yarnconfig:
-                yarnconfig.write("--no-default-rc true")
-
         if os.path.isfile(f"{self.pyenv_path}/bin/python3"):
             env["VIRTUAL_ENV"] = self.pyenv_path
             env["PATH"] = self.pyenv_path + "/bin:" + env["PATH"]

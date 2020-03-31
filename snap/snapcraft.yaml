@@ -1,7 +1,10 @@
 name: dotrun
 base: core18
-version: '1.1.4'
+
+version: "1.1.5"
+
 summary: A command-line tool for running Node.js and Python projects
+
 description: |
   A command-line tool for running Node.js and Python projects
   from Canonical's webteam
@@ -25,7 +28,7 @@ parts:
       mkdir -p $SNAPCRAFT_PART_INSTALL/lib
       gcc -g -O0 -Wall -Wstrict-prototypes -fPIC -shared lib.c -o $SNAPCRAFT_PART_INSTALL/lib/semwraplib.so -ldl
     build-packages:
-    - build-essential
+      - build-essential
 
   dotrun-module:
     plugin: python
@@ -41,6 +44,16 @@ parts:
       - optipng
       - zlib1g-dev
 
+plugs:
+  dot-npmrc:
+    interface: personal-files
+    read:
+      - $HOME/.npmrc
+  dot-yarnrc:
+    interface: personal-files
+    read:
+      - $HOME/.yarnrc
+
 apps:
   dotrun:
     command: dotrun
@@ -54,3 +67,5 @@ apps:
       - network
       - network-bind
       - process-control
+      - dot-npmrc
+      - dot-yarnrc

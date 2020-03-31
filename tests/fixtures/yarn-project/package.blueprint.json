@@ -2,6 +2,7 @@
   "scripts": {
     "start": "concurrently 'yarn run build' 'yarn run serve'",
     "build": "echo \"Build: ${BUILD}\"",
+    "chain": "yarn install && yarn help",
     "serve": "sleep 1; echo \"Serving: ${SERVE}\"",
     "fail": "echo 'Failed'; exit 26"
   },
