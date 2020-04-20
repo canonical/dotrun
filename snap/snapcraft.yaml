@@ -1,7 +1,7 @@
 name: dotrun
 base: core18
 
-version: "1.1.6"
+version: "1.1.7"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -36,13 +36,16 @@ parts:
     source: src
     stage-packages:
       - curl
-      - gettext  
+      - gettext
       - git
+      - build-essential
+      - python3-dev
       - libjpeg-progs
       - libmagickwand-dev
       - libpng-dev
       - libpq-dev
       - libsodium-dev
+      - gpg
       - optipng
       - zlib1g-dev
 

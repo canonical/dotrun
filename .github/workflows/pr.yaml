@@ -16,12 +16,13 @@ jobs:
 
       - name: Install dotrun snap
         run: |
-          snapcraft --destructive-mode
+          /snap/bin/snapcraft --destructive-mode
           sudo snap install --dangerous dotrun_*.snap
 
       - name: Run tests
         run: |
           pip3 install pexpect
+          export PATH=/snap/bin:$PATH
           python3 -m unittest discover --verbose --start-directory tests
 
   lint-python:
@@ -29,10 +30,10 @@ jobs:
     name: Lint python
 
     steps:
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
-    - name: Install system dependencies
-      run: |
-        sudo pip3 install flake8 black
-    - name: Lint Python
-      run: flake8 . && black --line-length 79 --check .
+      - name: Install system dependencies
+        run: |
+          sudo pip3 install flake8 black
+      - name: Lint Python
+        run: flake8 . && black --line-length 79 --check .
