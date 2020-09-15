@@ -102,15 +102,15 @@ class Project:
         self.yarn_run("clean", exit_on_error=False)
 
         if os.path.isfile(self.statefile_path):
-            self.log.step(f"Removing `.dotrun.json` state file")
+            self.log.step("Removing `.dotrun.json` state file")
             os.remove(self.statefile_path)
 
         if os.path.isdir("node_modules"):
-            self.log.step(f"Removing `node_modules`")
+            self.log.step("Removing `node_modules`")
             shutil.rmtree("node_modules")
 
         if os.path.isdir(self.pyenv_path):
-            self.log.step(f"Removing `.venv` python environment")
+            self.log.step("Removing `.venv` python environment")
             shutil.rmtree(self.pyenv_path)
 
     def yarn_run(self, script_name, arguments=[], exit_on_error=True):
@@ -262,7 +262,7 @@ class Project:
         """
 
         if not os.path.isfile(os.path.join(self.path, "requirements.txt")):
-            self.log.note(f"No requirements.txt found")
+            self.log.note("No requirements.txt found")
             return False
 
         changes = False
