@@ -6,7 +6,7 @@ import os
 
 @Request.application
 def application(request):
-    return Response(f"Serving...")
+    return Response("Serving...")
 
 
 if __name__ == "__main__":
