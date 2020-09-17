@@ -2,6 +2,8 @@
 
 # A tool for developing Node.js and Python projects
 
+[![dotrun](https://snapcraft.io//dotrun/badge.svg)](https://snapcraft.io/dotrun)
+
 `dotrun` makes use of [snap confinement](https://snapcraft.io/docs/snap-confinement) to provide a predictable sandbox for running Node and Python projects.
 
 Features:
