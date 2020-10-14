@@ -147,7 +147,7 @@ class Project:
 
         result = None
         load_dotenv(dotenv_path=f"{self.path}/.env")
-        load_dotenv(dotenv_path=f"{self.path}/.env.local")
+        load_dotenv(dotenv_path=f"{self.path}/.env.local", override=True)
         env = os.environ
         env.update(self.env_extra)
 
