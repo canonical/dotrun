@@ -27,7 +27,7 @@ jobs:
         run: |
           pip3 install pexpect
           export PATH=/snap/bin:$PATH
-          python3 -m unittest discover --verbose --start-directory tests
+          python3 -m unittest tests.test_empty_project.TestEmptyProject.test_help
 
   lint-python:
     runs-on: ubuntu-latest
