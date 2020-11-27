@@ -2,7 +2,7 @@
 
 set -exuo pipefail
 
-multipass launch -c 4 -m 8G -d 50G -n test-dotrun focal || echo "Skipping..."
+multipass launch -c 2 -m 4G -d 25G -n test-dotrun focal || echo "Skipping..."
 multipass start test-dotrun
 
 # Install snapcraft
