@@ -25,6 +25,7 @@ jobs:
 
       - name: Run tests
         run: |
+          pip3 install --upgrade pip
           pip3 install pexpect
           export PATH=/snap/bin:$PATH
           python3 -m unittest tests.test_empty_project.TestEmptyProject.test_help
