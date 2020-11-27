@@ -9,10 +9,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
 
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-
       - name: Install Snapcraft
         run: |
           sudo snap install snapcraft --classic
@@ -25,10 +21,9 @@ jobs:
 
       - name: Run tests
         run: |
-          pip3 install --upgrade pip
           pip3 install pexpect
           export PATH=/snap/bin:$PATH
-          python3 -m unittest tests.test_empty_project.TestEmptyProject.test_help
+          python3 -m unittest discover --verbose --start-directory tests
 
   lint-python:
     runs-on: ubuntu-latest
