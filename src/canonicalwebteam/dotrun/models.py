@@ -154,6 +154,13 @@ class Project:
         if os.path.isfile(f"{self.pyenv_path}/bin/python3"):
             env["VIRTUAL_ENV"] = self.pyenv_path
             env["PATH"] = self.pyenv_path + "/bin:" + env["PATH"]
+
+            # Update PYTHONPATH for core20
+            env["PYTHONPATH"] = (
+                f"{self.pyenv_path}/lib/python3.8/site-packages:"
+                f"{env['PYTHONPATH']}"
+            )
+
             env.pop("PYTHONHOME", None)
 
             self.log.step(

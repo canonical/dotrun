@@ -2,7 +2,7 @@
 
 set -exuo pipefail
 
-multipass launch -n test-dotrun bionic || echo "Skipping..."
+multipass launch -c 2 -m 4G -d 25G -n test-dotrun focal || echo "Skipping..."
 multipass start test-dotrun
 
 # Install snapcraft
@@ -14,7 +14,9 @@ multipass exec test-dotrun -- sudo ln -fs /snap/bin/snapcraft /usr/bin/snapcraft
 # Copy files into VM (remove any old files)
 rm -f /tmp/dotrun.tar.gz
 tar -czf /tmp/dotrun.tar.gz .
-multipass transfer /tmp/dotrun.tar.gz test-dotrun:dotrun.tar.gz
+mv /tmp/dotrun.tar.gz .
+multipass transfer dotrun.tar.gz test-dotrun:dotrun.tar.gz
+rm dotrun.tar.gz
 multipass exec test-dotrun -- rm -rf ./dotrun
 multipass exec test-dotrun -- sudo locale-gen en_GB.UTF-8
 multipass exec test-dotrun -- sudo update-locale LANG=en_GB.UTF-8
