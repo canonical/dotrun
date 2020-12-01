@@ -1,7 +1,7 @@
 name: dotrun
-base: core20
+base: core18
 
-version: "1.2.0"
+version: "1.1.9"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -34,10 +34,6 @@ parts:
   dotrun-module:
     plugin: python
     source: src
-    build-packages:
-      - gcc-multilib
-    python-packages:
-      - wheel
     stage-packages:
       - curl
       - gettext
@@ -65,13 +61,12 @@ plugs:
 
 apps:
   dotrun:
-    command: bin/dotrun
+    command: dotrun
     environment:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
       LD_PRELOAD: $SNAP/lib/semwraplib.so
-      PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages:$SNAP/lib/python3.8/dist-packages
     plugs:
       - home
       - network
