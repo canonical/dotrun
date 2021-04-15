@@ -1,7 +1,7 @@
 name: dotrun
 base: core18
 
-version: "1.1.9"
+version: "1.2.0"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -58,6 +58,13 @@ plugs:
     interface: personal-files
     read:
       - $HOME/.yarnrc
+  docker-cli:
+    interface: docker
+  docker-executables:
+    content: docker-executables
+    default-provider: docker
+    interface: content
+    target: docker-env
 
 apps:
   dotrun:
@@ -67,6 +74,7 @@ apps:
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
       LD_PRELOAD: $SNAP/lib/semwraplib.so
+      PYTHONPATH: $PYTHONPATH:/snap/docker/current/lib/python3.6/site-packages/
     plugs:
       - home
       - network
@@ -74,3 +82,5 @@ apps:
       - process-control
       - dot-npmrc
       - dot-yarnrc
+      - docker-cli
+      - docker-executables

@@ -127,6 +127,18 @@ def cli(args=None):
     if command == "install":
         return dotrun.install(force=True)
 
+    if command == "start":
+        if os.path.isfile("./docker-compose.yaml") and os.path.isfile(
+            f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
+        ):
+            dotrun.exec(
+                [
+                    f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose',
+                    "up",
+                    "-d",
+                ]
+            )
+
     if not arguments.skip_install:
         dotrun.install(force=False)
 
