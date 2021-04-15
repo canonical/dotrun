@@ -3,7 +3,7 @@ on: [pull_request]
 
 jobs:
   test-snap:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     name: Test snap
     steps:
       - name: Checkout
