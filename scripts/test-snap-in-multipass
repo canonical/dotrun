@@ -12,9 +12,7 @@ multipass exec test-dotrun -- sudo snap install snapcraft --classic
 multipass exec test-dotrun -- sudo ln -fs /snap/bin/snapcraft /usr/bin/snapcraft
 
 # Copy files into VM (remove any old files)
-rm -f /tmp/dotrun.tar.gz
-tar -czf /tmp/dotrun.tar.gz .
-multipass transfer /tmp/dotrun.tar.gz test-dotrun:dotrun.tar.gz
+tar -czO . | multipass transfer - test-dotrun:dotrun.tar.gz
 multipass exec test-dotrun -- rm -rf ./dotrun
 multipass exec test-dotrun -- sudo locale-gen en_GB.UTF-8
 multipass exec test-dotrun -- sudo update-locale LANG=en_GB.UTF-8
