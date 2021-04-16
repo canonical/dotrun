@@ -18,6 +18,11 @@ from termcolor import cprint
 from canonicalwebteam.dotrun.models import Project
 
 
+DOTRUN_COMPOSE_ACTIONS = os.environ.get(
+    "DOTRUN_COMPOSE_ACTIONS", "start:serve"
+).split(":")
+
+
 # Define available commands
 # ===
 class RawWithDefaultsFormatter(
@@ -112,8 +117,6 @@ def cli(args=None):
 
     dotrun = Project(path=path, env_extra=env_extra)
 
-    # Process command
-
     # Clean runs before install
     if command == "clean":
         return dotrun.clean()
@@ -127,27 +130,35 @@ def cli(args=None):
     if command == "install":
         return dotrun.install(force=True)
 
-    if command == "start":
-        if os.path.isfile("./docker-compose.yaml") and os.path.isfile(
-            f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
-        ):
-            dotrun.exec(
-                [
-                    f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose',
-                    "up",
-                    "-d",
-                ]
-            )
-
     if not arguments.skip_install:
         dotrun.install(force=False)
 
     # By default, run a yarn script
     if dotrun.has_script(command):
-        return dotrun.yarn_run(command, arguments.remainder)
+        # Some commands can run docker-compose in the background
+        if command in DOTRUN_COMPOSE_ACTIONS:
+            docker_compose = (
+                f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
+            )
+            if os.path.isfile("docker-compose.yaml") and os.path.isfile(
+                docker_compose
+            ):
+                dotrun.exec(
+                    [
+                        docker_compose,
+                        "up",
+                    ],
+                    background=True,
+                )
+
+        try:
+            return dotrun.yarn_run(command, arguments.remainder)
+        finally:
+            dotrun.terminate_background_processes()
     else:
         cprint(
-            f"\n[ `{command}` script not found in `package.json` ]\n", "red"
+            f"\n[ `{command}` script not found in `package.json` ]\n",
+            "red",
         )
         cli_parser.print_usage()
         sys.exit(1)

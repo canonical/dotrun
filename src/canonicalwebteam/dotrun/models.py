@@ -72,6 +72,7 @@ class Project:
         self.env_extra = {}
         self.pyenv_dir = ".venv"
         self.pyenv_path = f"{self.path}/{self.pyenv_dir}"
+        self._background_processes = []
 
         # Check all env values are string format
         for key, value in env_extra.items():
@@ -140,7 +141,7 @@ class Project:
             exit_on_error=exit_on_error,
         )
 
-    def exec(self, commands, exit_on_error=True):
+    def exec(self, commands, exit_on_error=True, background=False):
         """
         Run commands in the environment
         """
@@ -164,6 +165,13 @@ class Project:
             self.log.step(f"$ {' '.join(commands)}")
 
         try:
+            if background:
+                # Any background process is attached to dotrun
+                # they will be ended with SIGTERM when dotrun is finish
+                process = subprocess.Popen(commands, env=env, cwd=self.path)
+                self._background_processes.append(process)
+                return True
+
             result = subprocess.check_call(commands, env=env, cwd=self.path)
         except KeyboardInterrupt:
             self.log.step(f"`{' '.join(commands)}` cancelled - exiting")
@@ -177,6 +185,10 @@ class Project:
         print("")
 
         return result
+
+    def terminate_background_processes(self):
+        for process in self._background_processes:
+            process.terminate()
 
     # Node dependencies
 
