@@ -10,6 +10,7 @@ from argparse import (
 )
 import os
 import sys
+import time
 
 # Packages
 from termcolor import cprint
@@ -146,10 +147,17 @@ def cli(args=None):
                 dotrun.exec(
                     [
                         docker_compose,
+                        "pull",
+                    ]
+                )
+                dotrun.exec(
+                    [
+                        docker_compose,
                         "up",
                     ],
                     background=True,
                 )
+                time.sleep(2)
 
         try:
             return dotrun.yarn_run(command, arguments.remainder)
