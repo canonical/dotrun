@@ -25,6 +25,11 @@ jobs:
           export PATH=/snap/bin:$PATH
           python3 -m unittest discover --verbose --start-directory tests
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dotrun-snap
+          path: dotrun_*.snap
+
   lint-python:
     runs-on: ubuntu-latest
     name: Lint python
