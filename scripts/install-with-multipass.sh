@@ -54,7 +54,7 @@ else
         TOTAL_MEM=$(awk '/^Mem/ {print $2}' <(free -h --mega))
     else
         TOTAL_CPUS=$(sysctl -n hw.ncpu)
-        TOTAL_MEM=$(sysctl hw.memsize)
+        TOTAL_MEM=$(sysctl -n hw.memsize)
     fi
 
     multipass launch --cpus $TOTAL_CPUS --mem $TOTAL_MEM --disk 50G --name dotrun
