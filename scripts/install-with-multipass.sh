@@ -121,7 +121,7 @@ fi
 # Bash users
 if grep -q "dotrun()" $HOME/.bashrc; then
     echo ".bashrc: Removing previous dotrun()"
-    sed -i'' -e '/^dotrun()/,/}/d' $HOME/.bashrc
+    sed -i'' -e '/^dotrun()/,/^}/d' $HOME/.bashrc
 fi
 
 echo "Adding dotrun function to .bashrc"
@@ -132,7 +132,7 @@ echo -e "\n$FUNCTION" >> $HOME/.bashrc
 if [ -f $HOME/.zshrc ]; then
     if grep -q "dotrun()" $HOME/.zshrc; then
         echo ".zshrc: Removing previous dotrun()"
-        sed -i'' -e '/^dotrun()/,/}/d' $HOME/.zshrc
+        sed -i'' -e '/^dotrun()/,/^}/d' $HOME/.zshrc
     fi
 
     echo "Adding dotrun function to .zshrc"
