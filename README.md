@@ -55,7 +55,7 @@ We are maintaining a bash script that will install Multipass in your system and 
 
 To use it:
 ```bash
-curl -s https://github.com/canonical-web-and-design/dotrun/blob/master/scripts/install-with-multipass.sh | bash
+curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/install-with-multipass.sh | bash
 ```
 
 It will create a `dotrun-projects` folder in your home directory, you can clone projects here and use `dotrun` transparently.
