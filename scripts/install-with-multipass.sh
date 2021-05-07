@@ -57,24 +57,7 @@ else
         TOTAL_MEM=$(sysctl -n hw.memsize)
     fi
 
-    multipass launch --cpus $TOTAL_CPUS --mem $TOTAL_MEM --disk 50G --name dotrun
-    multipass exec dotrun -- sudo apt update
-    multipass exec dotrun -- sudo apt install --yes nfs-kernel-server
-
-    echo "Installing dotrun"
-    multipass exec dotrun -- sudo snap install dotrun
-    multipass exec dotrun -- sudo snap connect dotrun:dot-yarnrc
-    multipass exec dotrun -- sudo snap connect dotrun:dot-npmrc
-
-    echo "Creating shared directory"
-    multipass exec dotrun -- mkdir dotrun-projects
-    multipass exec dotrun -- chmod 777 dotrun-projects
-    multipass exec dotrun -- bash -c 'echo "$HOME/dotrun-projects $(ip addr | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\/24\b")(rw,fsid=0,insecure,no_subtree_check,all_squash,async,anonuid=1000,anongid=1000)" | sudo tee -a /etc/exports'
-    multipass exec dotrun -- sudo exportfs -a || true
-    multipass exec dotrun -- sudo service nfs-kernel-server restart || true
-    sleep 2
-    # Issue with some Macs: https://github.com/canonical/multipass/issues/2088
-    echo "* If this script ended here, please rerun the script"
+    curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/cloud-init-dotrun.yaml | multipass launch --cpus $TOTAL_CPUS --mem $TOTAL_MEM --disk 50G --name dotrun --cloud-init -
 fi
 
 ##########################
@@ -110,7 +93,7 @@ if [ "$machine" = "Linux" ]; then
     FUNCTION='dotrun() {
     SITE=$(realpath --relative-base="$HOME" .)
     cd
-    multipass exec dotrun -- dotrun -C $SITE "$@" && cd $SITE
+    multipass exec dotrun -- dotrun -C $SITE "$@" ; cd $SITE
 }'
 else
     FUNCTION='dotrun() {
