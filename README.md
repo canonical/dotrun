@@ -33,13 +33,19 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ### Ubuntu
 
+The best way to install dotrun with all the requirements is by running the following script:
 ```bash
-sudo snap install dotrun
-sudo snap connect dotrun:dot-npmrc
-sudo snap connect dotrun:dot-yarnrc
+curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/install-dotrun-docker.sh | bash
 ```
 
-Note: The `dotrun:dot-npmrc` and `dotrun:dot-yarnrc` [plugs](https://snapcraft.io/docs/interface-management) gives the snap access to read the `~/.npmrc` and `~/.yarnrc` files in your home directory. This is only necessary if you have these files on your system, but if they do exist, the snap will fail to run `yarn` unless it's given access.
+**What the script does**
+
+- Add the user to the docker group
+- Install the dotrun snap and the docker snap
+- It will also set the needed [plugs](https://snapcraft.io/docs/interface-management):
+  - `dotrun:dot-npmrc` gives the snap access to read the `~/.npmrc`
+  - `dotrun:dot-yarnrc` gives the snap access to read the `~/.yarnrc`
+  - `dotrun:docker-executables docker:docker-executables dotrun:docker-cli docker:docker-daemon` will make it possible to the dotrun snap to use docker. These docker plugs and the docker snap are optional but needed for projects with `docker-compose.yaml` files.
 
 ### MacOS
 

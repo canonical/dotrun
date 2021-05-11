@@ -3,7 +3,7 @@ on: [pull_request]
 
 jobs:
   test-snap:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     name: Test snap
     steps:
       - name: Checkout
@@ -24,6 +24,11 @@ jobs:
           pip3 install pexpect
           export PATH=/snap/bin:$PATH
           python3 -m unittest discover --verbose --start-directory tests
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dotrun-snap
+          path: dotrun_*.snap
 
   lint-python:
     runs-on: ubuntu-latest
