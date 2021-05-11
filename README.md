@@ -49,6 +49,17 @@ Given that file access over a virtual network share [is incredibly slow](https:/
 
 See @hatched's [guide](https://fromanegg.com/post/2020/02/28/use-ubuntu-on-mac-os-with-multipass/) for how to achieve this setup.
 
+#### Automated installation with Multipass
+
+We are maintaining a bash script that will install Multipass in your system and configure your machine to proxy the dotrun command to a Multipass instance.
+
+To use it:
+```bash
+curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/install-with-multipass.sh | bash
+```
+
+It will create a `dotrun-projects` folder in your home directory, you can clone projects here and use `dotrun` transparently.
+
 ## Converting existing projects
 
 On the whole, our existing projects should run out of the box with:
