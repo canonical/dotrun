@@ -126,3 +126,11 @@ This runs the same tests in the `tests` directory against an actual snap install
 ### Automated tests of pull requests
 
 [The "PR" action](.github/workflows/pr.yml) builds the snap and runs the `tests`, similar to the "multipass" solution above. This will run against every pull request.
+
+### Publish
+
+All the changes made to the master branch will be automatically published in the candidate track of the snap. To use candidate:
+
+```bash
+sudo snap install dotrun --candidate
+```
