@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
       - uses: actions/checkout@v1
@@ -38,6 +38,6 @@ jobs:
           new_version=$(curl -s -H 'Snap-Device-Series: 16' https://api.snapcraft.io/v2/snaps/info/dotrun | jq -r '.["channel-map"][0]["version"]')
           echo "$SNAPCRAFT_LOGIN_FILE" | base64 --decode --ignore-garbage > snapcraft.login
           /snap/bin/snapcraft login --with snapcraft.login
-          /snap/bin/snapcraft push *.snap --release stable
+          /snap/bin/snapcraft push *.snap --release candidate
         env:
           SNAPCRAFT_LOGIN_FILE: ${{ secrets.SNAPCRAFT_LOGIN_FILE }}
