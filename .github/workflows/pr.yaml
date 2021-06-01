@@ -7,7 +7,7 @@ jobs:
     name: Test snap
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Snapcraft
         run: |
@@ -35,7 +35,7 @@ jobs:
     name: Lint python
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
 
       - name: Install system dependencies
         run: |
