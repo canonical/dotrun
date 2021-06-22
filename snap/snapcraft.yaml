@@ -1,7 +1,7 @@
 name: dotrun
 base: core18
 
-version: "1.2.0"
+version: "1.3.0"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -15,7 +15,7 @@ confinement: strict
 parts:
   node:
     plugin: dump
-    source: https://deb.nodesource.com/node_12.x/pool/main/n/nodejs/nodejs_12.4.0-1nodesource1_amd64.deb
+    source: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.3.0-1nodesource1_amd64.deb
 
   yarn:
     plugin: dump
