@@ -1,7 +1,7 @@
 name: dotrun
 base: core18
 
-version: "1.3.0"
+version: "1.4.0"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -12,10 +12,16 @@ description: |
 grade: stable
 confinement: strict
 
+architectures:
+  - build-on: [amd64, arm64]
+    run-on: [amd64, arm64]
+
 parts:
   node:
     plugin: dump
-    source: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.3.0-1nodesource1_amd64.deb
+    source:
+      - on amd64: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.8.0-deb-1nodesource1_amd64.deb
+      - on arm64: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.8.0-deb-1nodesource1_arm64.deb
 
   yarn:
     plugin: dump
