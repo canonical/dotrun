@@ -35,7 +35,7 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 The best way to install dotrun with all the requirements is by running the following script:
 ```bash
-curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/install-dotrun-docker.sh | bash
+curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/main/scripts/install-dotrun-docker.sh | bash
 ```
 
 **What the script does**
@@ -61,7 +61,7 @@ We are maintaining a bash script that will install Multipass in your system and 
 
 To use it:
 ```bash
-curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/install-with-multipass.sh | bash
+curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/main/scripts/install-with-multipass.sh | bash
 ```
 
 It will create a `dotrun-projects` folder in your home directory, you can clone projects here and use `dotrun` transparently.
