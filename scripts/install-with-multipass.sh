@@ -57,7 +57,7 @@ else
         TOTAL_MEM=$(sysctl -n hw.memsize)
     fi
 
-    curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/master/scripts/cloud-init-dotrun.yaml | multipass launch --cpus $TOTAL_CPUS --mem $TOTAL_MEM --disk 50G --name dotrun --cloud-init -
+    curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/main/scripts/cloud-init-dotrun.yaml | multipass launch --cpus $TOTAL_CPUS --mem $TOTAL_MEM --disk 50G --name dotrun --cloud-init -
 fi
 
 ##########################
