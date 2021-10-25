@@ -1,7 +1,7 @@
 name: dotrun
 base: core18
 
-version: "1.4.0"
+version: "1.4.1"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -46,7 +46,9 @@ parts:
       - git
       - build-essential
       - python3-dev
+      - libjpeg-dev
       - libjpeg-progs
+      - libmagic1
       - libmagickwand-dev
       - libpng-dev
       - libpq-dev
