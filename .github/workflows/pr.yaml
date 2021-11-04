@@ -16,7 +16,9 @@ jobs:
 
       - name: Install dotrun snap
         run: |
+          sudo rm -rf /etc/docker
           /snap/bin/snapcraft --destructive-mode
+          sudo snap install docker
           sudo snap install --dangerous dotrun_*.snap
 
       - name: Run tests
