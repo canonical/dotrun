@@ -111,8 +111,11 @@ class Project:
             shutil.rmtree("node_modules")
 
         if os.path.isdir(self.pyenv_path):
-            self.log.step("Removing `.venv` python environment")
-            shutil.rmtree(self.pyenv_path)
+            self._clean_python_env()
+
+    def _clean_python_env(self):
+        self.log.step("Removing `.venv` python environment")
+        shutil.rmtree(self.pyenv_path)
 
     def yarn_run(self, script_name, arguments=[], exit_on_error=True):
         """
@@ -156,6 +159,15 @@ class Project:
             env["VIRTUAL_ENV"] = self.pyenv_path
             env["PATH"] = self.pyenv_path + "/bin:" + env["PATH"]
             env.pop("PYTHONHOME", None)
+
+            if not os.path.isfile(f"{self.pyenv_path}/bin/python3.8"):
+                self.log.note(
+                    "Dotrun was updated to use Python 3.8! "
+                    "This project seems to be using a previous Python environment."
+                )
+                self.log.step("Cleaning previous Python environment")
+                self._clean_python_env()
+                self._install_python_dependencies(force=True)
 
             self.log.step(
                 f"$ {' '.join(commands)}",
