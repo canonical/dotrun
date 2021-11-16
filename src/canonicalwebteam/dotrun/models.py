@@ -162,10 +162,10 @@ class Project:
 
             if not os.path.isfile(f"{self.pyenv_path}/bin/python3.8"):
                 self.log.note(
-                    "Dotrun was updated to use Python 3.8! "
-                    "This project seems to be using a previous Python environment."
+                    "Dotrun was updated to use Python 3.8! This project "
+                    "seems to be using a previous Python environment."
                 )
-                self.log.step("Cleaning previous Python environment")
+                self.log.step("Creating new Python environment")
                 self._clean_python_env()
                 self._install_python_dependencies(force=True)
 

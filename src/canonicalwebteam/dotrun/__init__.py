@@ -141,9 +141,10 @@ def cli(args=None):
             docker_compose = (
                 f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
             )
-            if os.path.isfile("docker-compose.yaml") and os.path.isfile(
-                docker_compose
-            ):
+            if (
+                os.path.isfile("docker-compose.yaml")
+                or os.path.isfile("docker-compose.yml")
+            ) and os.path.isfile(docker_compose):
                 dotrun.exec(
                     [
                         docker_compose,
