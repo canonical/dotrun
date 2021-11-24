@@ -13,8 +13,8 @@ grade: stable
 confinement: strict
 
 architectures:
-  - build-on: [amd64, arm64]
-    run-on: [amd64, arm64]
+  - build-on: amd64
+  - build-on: arm64
 
 parts:
   node:
