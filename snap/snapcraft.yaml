@@ -9,6 +9,7 @@ description: |
   A command-line tool for running Node.js and Python projects
   from Canonical's webteam
 
+base: core20
 grade: stable
 confinement: strict
 
@@ -17,77 +18,6 @@ architectures:
   - build-on: arm64
 
 parts:
-  # Use custom Python version
-  # More info: https://forum.snapcraft.io/t/build-a-snap-with-any-version-of-python-i-want/10420/6
-  python38:
-    source: https://www.python.org/ftp/python/3.8.2/Python-3.8.2.tar.xz
-    source-type: tar
-    source-checksum: md5/e9d6ebc92183a177b8e8a58cad5b8d67
-    plugin: autotools
-    configflags:
-      - --prefix=/usr
-    build-packages:
-      - libbz2-dev
-      - libexpat1-dev
-      - libffi-dev
-      - libgdbm-dev
-      - liblzma-dev
-      - libncurses5-dev
-      - libreadline-dev
-      - libsqlite3-dev
-      - libssl-dev
-      - libzip-dev
-      - uuid-dev
-    stage-packages:
-      - libbz2-1.0
-      - libexpat1
-      - libffi6
-      - libgdbm-dev
-      - liblzma5
-      - libncurses5
-      - libreadline-dev
-      - libsqlite3-0
-      - libssl1.0.0
-      - libzip4
-      - uuid-runtime
-    override-stage: |
-      # We want the latest pip to be able to install pyproject.toml based projects
-      PYTHONUSERBASE="$SNAPCRAFT_PART_INSTALL/usr" python3.8 -m pip install --user --upgrade pip wheel
-
-      # Apply the same shebang rewrite as done by snapcraft
-      find $SNAPCRAFT_PART_INSTALL/usr/bin/ -maxdepth 1 -mindepth 1 -type f -executable -exec \
-        sed -i                                                                                \
-          "s|^#!${SNAPCRAFT_PART_INSTALL}/usr/bin/python3.8$|#!/usr/bin/env python3|" {} \;
-
-      snapcraftctl stage
-    filesets:
-      exclusion:
-        - -etc
-        - -lib/systemd
-        - -usr/bin/2to3
-        - -usr/bin/2to3-3.8
-        - -usr/bin/deb-systemd-helper
-        - -usr/bin/deb-systemd-invoke
-        - -usr/bin/easy_install-3.8
-        - -usr/bin/idle3
-        - -usr/bin/idle3.8
-        - -usr/bin/pip3
-        - -usr/bin/pip3.8
-        - -usr/bin/pydoc3
-        - -usr/bin/pydoc3.8
-        - -usr/bin/python3.8-config
-        - -usr/bin/python3-config
-        - -usr/bin/uuidgen
-        - -usr/include
-        - -usr/lib/*.a
-        - -usr/lib/pkgconfig
-        - -usr/lib/python3.8/test
-        - -usr/sbin
-        - -usr/share
-        - -var
-    prime:
-      - "$exclusion"
-
   node:
     plugin: dump
     source:
@@ -111,6 +41,8 @@ parts:
   dotrun-module:
     plugin: python
     source: src
+    python-packages:
+      - docker-compose
     stage-packages:
       - curl
       - gettext
@@ -127,16 +59,6 @@ parts:
       - gpg
       - optipng
       - zlib1g-dev
-    stage:
-     - -lib/x86_64-linux-gnu/libbz2.so.1.0
-     - -usr/bin/pydoc3
-     - -usr/bin/python3
-     - -usr/bin/python3-config
-     - -usr/lib/python3.8/distutils/*
-     - -usr/lib/python3.8/lib2to3/*
-    after:
-      - python38
-
 plugs:
   dot-npmrc:
     interface: personal-files
@@ -156,15 +78,12 @@ plugs:
 
 apps:
   dotrun:
-    command: dotrun
+    command: bin/dotrun
     environment:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
       LD_PRELOAD: $SNAP/lib/semwraplib.so
-      # Needed for docker snap, previous error trace:
-      # https://pastebin.ubuntu.com/p/xyKgPdKNqQ/
-      PYTHONPATH: $PYTHONPATH:/snap/docker/current/lib/python3.8/site-packages/:/snap/docker/current/lib/python3.6/site-packages/
     plugs:
       - home
       - network

@@ -9,16 +9,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install Snapcraft
-        run: |
-          sudo snap install snapcraft --classic
-          sudo chown root:root /
+      - name: Install Snapcraft with LXD
+        uses: samuelmeuli/action-snapcraft@v1
+        with:
+          use_lxd: true
+
+      - name: Build snap
+        run: sg lxd -c 'snapcraft --use-lxd'
 
       - name: Install dotrun snap
         run: |
           sudo rm -rf /etc/docker
-          /snap/bin/snapcraft --destructive-mode
-          sudo snap install docker
           sudo snap install --dangerous dotrun_*.snap
 
       - name: Run tests
