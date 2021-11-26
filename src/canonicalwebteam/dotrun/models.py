@@ -14,6 +14,13 @@ from termcolor import cprint
 # Local
 from canonicalwebteam.dotrun.file_helpers import file_md5
 
+DOCKER_COMPOSE_BINARY = (
+    f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
+)
+DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS = os.environ.get(
+    "DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS", "2"
+)
+
 
 class State:
     def __init__(self, filepath):
@@ -111,8 +118,14 @@ class Project:
             shutil.rmtree("node_modules")
 
         if os.path.isdir(self.pyenv_path):
-            self.log.step("Removing `.venv` python environment")
-            shutil.rmtree(self.pyenv_path)
+            self._clean_python_env()
+
+        if self._check_docker_compose():
+            self._docker_compose_clean()
+
+    def _clean_python_env(self):
+        self.log.step("Removing `.venv` python environment")
+        shutil.rmtree(self.pyenv_path)
 
     def yarn_run(self, script_name, arguments=[], exit_on_error=True):
         """
@@ -156,6 +169,15 @@ class Project:
             env["VIRTUAL_ENV"] = self.pyenv_path
             env["PATH"] = self.pyenv_path + "/bin:" + env["PATH"]
             env.pop("PYTHONHOME", None)
+
+            if not os.path.isfile(f"{self.pyenv_path}/bin/python3.8"):
+                self.log.note(
+                    "Dotrun was updated to use Python 3.8! This project "
+                    "seems to be using a previous Python environment."
+                )
+                self.log.step("Creating new Python environment")
+                self._clean_python_env()
+                self._install_python_dependencies(force=True)
 
             self.log.step(
                 f"$ {' '.join(commands)}",
@@ -268,6 +290,38 @@ class Project:
 
         return {"requirements": requirements, "installed_packages": packages}
 
+    def _create_python_environment(self):
+        """
+        Create a Python environment using virtualenv
+        """
+
+        self.log.note(f"Creating python environment: {self.pyenv_dir}")
+        python_path = shutil.which("python3")
+
+        if "SNAP_REVISION" in os.environ:
+            python_path = python_path.replace(
+                "/snap/dotrun/" + os.environ["SNAP_REVISION"],
+                "/snap/dotrun/current",
+            )
+
+        self.exec(
+            [
+                "virtualenv",
+                "--always-copy",
+                "--python",
+                python_path,
+                self.pyenv_path,
+            ]
+        )
+
+        package_dir = glob(f"{self.pyenv_path}/lib/python*/site-packages/")[0]
+
+        # Include Python packages to the venv from dotrun
+        # Needed to run docker compose, previous error trace:
+        # https://pastebin.ubuntu.com/p/xyKgPdKNqQ/
+        with open(f"{package_dir}dotrun.pth", "w+") as f:
+            f.write("/snap/dotrun/current/lib/python3.8/site-packages/")
+
     def _install_python_dependencies(self, force=False):
         """
         Install python dependencies if anything has changed
@@ -280,22 +334,7 @@ class Project:
         changes = False
 
         if not os.path.isdir(self.pyenv_path):
-            self.log.note(f"Creating python environment: {self.pyenv_dir}")
-            python_path = shutil.which("python3")
-            if "SNAP_REVISION" in os.environ:
-                python_path = python_path.replace(
-                    "/snap/dotrun/" + os.environ["SNAP_REVISION"],
-                    "/snap/dotrun/current",
-                )
-            self.exec(
-                [
-                    "virtualenv",
-                    "--always-copy",
-                    "--python",
-                    python_path,
-                    self.pyenv_path,
-                ]
-            )
+            self._create_python_environment()
 
         if not force:
             current_state = self._get_python_state()
@@ -312,3 +351,54 @@ class Project:
             self.state["python"] = self._get_python_state()
         else:
             self.log.note("Python dependencies up to date")
+
+    # Docker
+
+    def _check_docker_compose(self):
+        """
+        Check if the projects is using docker compose and docker snap
+        is installed
+        """
+
+        return (
+            os.path.isfile("docker-compose.yaml")
+            or os.path.isfile("docker-compose.yml")
+        ) and os.path.isfile(DOCKER_COMPOSE_BINARY)
+
+    def _docker_compose_start(self):
+        """
+        Check if the projects is using docker compose and docker snap
+        is installed
+        """
+        self.exec(
+            [
+                DOCKER_COMPOSE_BINARY,
+                "pull",
+            ]
+        )
+        self.exec(
+            [
+                DOCKER_COMPOSE_BINARY,
+                "stop",
+            ],
+        )
+        self.exec(
+            [
+                DOCKER_COMPOSE_BINARY,
+                "up",
+            ],
+            background=True,
+        )
+        time.sleep(int(DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS))
+
+    def _docker_compose_clean(self):
+        """
+        Check if the projects is using docker compose and docker snap
+        is installed
+        """
+        self.exec(
+            [
+                DOCKER_COMPOSE_BINARY,
+                "down",
+            ]
+        )

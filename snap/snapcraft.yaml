@@ -1,7 +1,7 @@
 name: dotrun
 base: core18
 
-version: "1.4.1"
+version: "1.4.2"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -9,6 +9,7 @@ description: |
   A command-line tool for running Node.js and Python projects
   from Canonical's webteam
 
+base: core20
 grade: stable
 confinement: strict
 
@@ -40,6 +41,8 @@ parts:
   dotrun-module:
     plugin: python
     source: src
+    python-packages:
+      - docker-compose
     stage-packages:
       - curl
       - gettext
@@ -56,7 +59,6 @@ parts:
       - gpg
       - optipng
       - zlib1g-dev
-
 plugs:
   dot-npmrc:
     interface: personal-files
@@ -76,13 +78,12 @@ plugs:
 
 apps:
   dotrun:
-    command: dotrun
+    command: bin/dotrun
     environment:
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
       LD_PRELOAD: $SNAP/lib/semwraplib.so
-      PYTHONPATH: $PYTHONPATH:/snap/docker/current/lib/python3.6/site-packages/
     plugs:
       - home
       - network

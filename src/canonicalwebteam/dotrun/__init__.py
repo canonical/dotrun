@@ -10,7 +10,6 @@ from argparse import (
 )
 import os
 import sys
-import time
 
 # Packages
 from termcolor import cprint
@@ -19,8 +18,8 @@ from termcolor import cprint
 from canonicalwebteam.dotrun.models import Project
 
 
-DOTRUN_COMPOSE_ACTIONS = os.environ.get(
-    "DOTRUN_COMPOSE_ACTIONS", "start:serve"
+DOTRUN_DOCKER_COMPOSE_ACTIONS = os.environ.get(
+    "DOTRUN_DOCKER_COMPOSE_ACTIONS", "start:serve"
 ).split(":")
 
 
@@ -137,27 +136,9 @@ def cli(args=None):
     # By default, run a yarn script
     if dotrun.has_script(command):
         # Some commands can run docker-compose in the background
-        if command in DOTRUN_COMPOSE_ACTIONS:
-            docker_compose = (
-                f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
-            )
-            if os.path.isfile("docker-compose.yaml") and os.path.isfile(
-                docker_compose
-            ):
-                dotrun.exec(
-                    [
-                        docker_compose,
-                        "pull",
-                    ]
-                )
-                dotrun.exec(
-                    [
-                        docker_compose,
-                        "up",
-                    ],
-                    background=True,
-                )
-                time.sleep(2)
+        if command in DOTRUN_DOCKER_COMPOSE_ACTIONS:
+            if dotrun._check_docker_compose():
+                dotrun._docker_compose_start()
 
         try:
             return dotrun.yarn_run(command, arguments.remainder)
