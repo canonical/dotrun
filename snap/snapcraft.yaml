@@ -1,7 +1,6 @@
 name: dotrun
-base: core18
 
-version: "1.4.2"
+version: "1.4.3"
 
 summary: A command-line tool for running Node.js and Python projects
 
