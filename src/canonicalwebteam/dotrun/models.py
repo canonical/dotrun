@@ -361,8 +361,8 @@ class Project:
         """
 
         return (
-            os.path.isfile("docker-compose.yaml")
-            or os.path.isfile("docker-compose.yml")
+            os.path.isfile(f"{self.path}/docker-compose.yaml")
+            or os.path.isfile(f"{self.path}/docker-compose.yml")
         ) and os.path.isfile(DOCKER_COMPOSE_BINARY)
 
     def _docker_compose_start(self):
