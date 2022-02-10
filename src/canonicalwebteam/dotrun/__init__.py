@@ -18,11 +18,6 @@ from termcolor import cprint
 from canonicalwebteam.dotrun.models import Project
 
 
-DOTRUN_DOCKER_COMPOSE_ACTIONS = os.environ.get(
-    "DOTRUN_DOCKER_COMPOSE_ACTIONS", "start:serve"
-).split(":")
-
-
 # Define available commands
 # ===
 class RawWithDefaultsFormatter(
@@ -135,11 +130,6 @@ def cli(args=None):
 
     # By default, run a yarn script
     if dotrun.has_script(command):
-        # Some commands can run docker-compose in the background
-        if command in DOTRUN_DOCKER_COMPOSE_ACTIONS:
-            if dotrun._check_docker_compose():
-                dotrun._docker_compose_start()
-
         try:
             return dotrun.yarn_run(command, arguments.remainder)
         finally:

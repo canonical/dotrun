@@ -17,9 +17,6 @@ from canonicalwebteam.dotrun.file_helpers import file_md5
 DOCKER_COMPOSE_BINARY = (
     f'{os.environ.get("SNAP")}/docker-env/bin/docker-compose'
 )
-DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS = os.environ.get(
-    "DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS", "2"
-)
 
 
 class State:
@@ -81,9 +78,14 @@ class Project:
         self.pyenv_path = f"{self.path}/{self.pyenv_dir}"
         self._background_processes = []
 
+        # Load the env vile if it exists
+        load_dotenv(dotenv_path=f"{self.path}/.env")
+        load_dotenv(dotenv_path=f"{self.path}/.env.local", override=True)
+        self.env = os.environ
+
         # Check all env values are string format
         for key, value in env_extra.items():
-            self.env_extra[key] = str(value)
+            self.env[key] = str(value)
 
     def has_script(self, script_name):
         """
@@ -141,6 +143,15 @@ class Project:
                 if script_name not in json.load(json_file).get("scripts", {}):
                     error = f"'{script_name}' script not found in package.json"
 
+        compose_actions = self.env.get(
+            "DOTRUN_DOCKER_COMPOSE_ACTIONS", "start:serve"
+        ).split(":")
+
+        # Some commands can run docker-compose in the background
+        if script_name in compose_actions:
+            if self._check_docker_compose():
+                self._docker_compose_start()
+
         if error:
             if exit_on_error:
                 self.log.error(error)
@@ -160,15 +171,11 @@ class Project:
         """
 
         result = None
-        load_dotenv(dotenv_path=f"{self.path}/.env")
-        load_dotenv(dotenv_path=f"{self.path}/.env.local", override=True)
-        env = os.environ
-        env.update(self.env_extra)
 
         if os.path.isfile(f"{self.pyenv_path}/bin/python3"):
-            env["VIRTUAL_ENV"] = self.pyenv_path
-            env["PATH"] = self.pyenv_path + "/bin:" + env["PATH"]
-            env.pop("PYTHONHOME", None)
+            self.env["VIRTUAL_ENV"] = self.pyenv_path
+            self.env["PATH"] = self.pyenv_path + "/bin:" + self.env["PATH"]
+            self.env.pop("PYTHONHOME", None)
 
             if not os.path.isfile(f"{self.pyenv_path}/bin/python3.8"):
                 self.log.note(
@@ -190,11 +197,15 @@ class Project:
             if background:
                 # Any background process is attached to dotrun
                 # they will be ended with SIGTERM when dotrun is finish
-                process = subprocess.Popen(commands, env=env, cwd=self.path)
+                process = subprocess.Popen(
+                    commands, env=self.env, cwd=self.path
+                )
                 self._background_processes.append(process)
                 return True
 
-            result = subprocess.check_call(commands, env=env, cwd=self.path)
+            result = subprocess.check_call(
+                commands, env=self.env, cwd=self.path
+            )
         except KeyboardInterrupt:
             self.log.step(f"`{' '.join(commands)}` cancelled - exiting")
             time.sleep(1)
@@ -370,6 +381,9 @@ class Project:
         Check if the projects is using docker compose and docker snap
         is installed
         """
+
+        wait_seconds = self.env.get("DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS", "2")
+
         self.exec(
             [
                 DOCKER_COMPOSE_BINARY,
@@ -389,7 +403,7 @@ class Project:
             ],
             background=True,
         )
-        time.sleep(int(DOTRUN_DOCKER_COMPOSE_WAIT_SECONDS))
+        time.sleep(int(wait_seconds))
 
     def _docker_compose_clean(self):
         """
