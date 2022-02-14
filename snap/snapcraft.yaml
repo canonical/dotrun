@@ -1,6 +1,6 @@
 name: dotrun
 
-version: "1.4.3"
+version: "1.4.4"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -48,6 +48,7 @@ parts:
       - git
       - build-essential
       - python3-dev
+      - libc6-dev
       - libjpeg-dev
       - libjpeg-progs
       - libmagic1
