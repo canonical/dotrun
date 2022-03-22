@@ -1,6 +1,6 @@
 name: dotrun
 
-version: "1.4.3"
+version: "1.4.4"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -83,6 +83,9 @@ apps:
       LC_ALL: C.UTF-8
       LC_CTYPE: C.UTF-8
       LD_PRELOAD: $SNAP/lib/semwraplib.so
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
+      GIT_CONFIG_NOSYSTEM: 1
     plugs:
       - home
       - network
