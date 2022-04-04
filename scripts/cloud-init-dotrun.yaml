@@ -8,6 +8,6 @@ runcmd:
   - bash ./install-dotrun-docker.sh
   - mkdir /home/ubuntu/dotrun-projects
   - chown ubuntu:ubuntu /home/ubuntu/dotrun-projects
-  - echo "/home/ubuntu/dotrun-projects $(ip addr | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\/24\b")(rw,fsid=0,insecure,no_subtree_check,all_squash,async,anonuid=1000,anongid=1000)" | tee -a /etc/exports
+  - sh -c 'echo "/home/ubuntu/dotrun-projects $(ip addr | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\/24\b")(rw,fsid=0,insecure,no_subtree_check,all_squash,async,anonuid=1000,anongid=1000)" | tee -a /etc/exports'
   - exportfs -a
   - service nfs-kernel-server restart
