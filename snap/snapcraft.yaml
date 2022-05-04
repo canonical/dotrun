@@ -95,6 +95,8 @@ plugs:
     default-provider: docker
     interface: content
     target: docker-env
+  lxd:
+    interface: lxd
 
 apps:
   dotrun:
