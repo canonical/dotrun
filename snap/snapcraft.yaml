@@ -1,6 +1,6 @@
 name: dotrun
 
-version: "1.4.5"
+version: "1.4.6"
 
 summary: A command-line tool for running Node.js and Python projects
 
