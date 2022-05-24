@@ -125,7 +125,7 @@ This runs the same tests in the `tests` directory against an actual snap install
 
 ### Automated tests of pull requests
 
-[The "PR" action](.github/workflows/pr.yml) builds the snap and runs the `tests`, similar to the "multipass" solution above. This will run against every pull request.
+[The "PR" action](.github/workflows/pr.yaml) builds the snap and runs the `tests`, similar to the "multipass" solution above. This will run against every pull request.
 
 ### Publish
 
