@@ -20,12 +20,12 @@ parts:
   node:
     plugin: dump
     source:
-      - on amd64: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.8.0-deb-1nodesource1_amd64.deb
-      - on arm64: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.8.0-deb-1nodesource1_arm64.deb
+      - on amd64: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.15.1-deb-1nodesource1_amd64.deb
+      - on arm64: https://deb.nodesource.com/node_16.x/pool/main/n/nodejs/nodejs_16.15.1-deb-1nodesource1_arm64.deb
 
   yarn:
     plugin: dump
-    source: https://github.com/yarnpkg/yarn/releases/download/v1.22.0/yarn_1.22.0_all.deb
+    source: https://github.com/yarnpkg/yarn/releases/download/v1.22.19/yarn_1.22.19_all.deb
 
   semwraplib:
     plugin: dump
