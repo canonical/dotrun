@@ -1,37 +1,56 @@
 name: PR
-on: [pull_request]
+# on: [pull_request]
+on:
+  push:
+    branches:
+      - 'v2'
 
 jobs:
-  test-snap:
-    runs-on: ubuntu-18.04
-    name: Test snap
+  test-dotrun-ubuntu:
+    runs-on: ubuntu-latest
+    name: Test dotrun
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install Snapcraft with LXD
-        uses: samuelmeuli/action-snapcraft@v1
-        with:
-          use_lxd: true
-
-      - name: Build snap
-        run: sg lxd -c 'snapcraft --use-lxd'
-
-      - name: Install dotrun snap
+      - name: Install dotrun
         run: |
-          sudo rm -rf /etc/docker
-          sudo snap install --dangerous dotrun_*.snap
+          pip3 install .
 
-      - name: Run tests
+      - name: Test ubuntu.com
         run: |
-          pip3 install pexpect
-          export PATH=/snap/bin:$PATH
-          python3 -m unittest discover --verbose --start-directory tests
+          git clone https://github.com/canonical-web-and-design/ubuntu.com
+          cd ubuntu.com
+          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: dotrun-snap
-          path: dotrun_*.snap
+      - name: Test snapcraft.io
+        run: |
+          git clone https://github.com/canonical-web-and-design/snapcraft.io
+          cd snapcraft.io
+          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
+
+  test-dotrun-mac:
+    runs-on: macos-latest
+    name: Test dotrun
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dotrun
+        run: |
+          pip3 install .
+
+      - name: Test ubuntu.com
+        run: |
+          git clone https://github.com/canonical-web-and-design/ubuntu.com
+          cd ubuntu.com
+          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
+
+      - name: Test snapcraft.io
+        run: |
+          git clone https://github.com/canonical-web-and-design/snapcraft.io
+          cd snapcraft.io
+          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
 
   lint-python:
     runs-on: ubuntu-latest
@@ -46,7 +65,7 @@ jobs:
           sudo pip3 install flake8 black
       - name: Lint Python
         run: flake8 . && black --line-length 79 --check .
-        
+
   check-inclusive-naming:
     runs-on: ubuntu-latest
 
