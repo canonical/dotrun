@@ -1,0 +1,23 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: snok/install-poetry@v1
+
+    - name: Build package
+      run: poetry build
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}

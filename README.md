@@ -31,6 +31,11 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ## Installation
 
+To install dotrun run:
+```
+sudo pip3 install dotrun
+```
+
 ### Requirements
 
 - Linux / macOS

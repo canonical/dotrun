@@ -1,56 +1,26 @@
 name: PR
-# on: [pull_request]
-on:
-  push:
-    branches:
-      - 'v2'
+on: pull_request
 
 jobs:
   test-dotrun-ubuntu:
     runs-on: ubuntu-latest
-    name: Test dotrun
+    name: Test dotrun on Ubuntu (snapcraft.io project)
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Install dotrun
-        run: |
-          pip3 install .
+        run: pip3 install .
 
-      - name: Test ubuntu.com
-        run: |
-          git clone https://github.com/canonical-web-and-design/ubuntu.com
-          cd ubuntu.com
-          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
+      - name: Install newest version of curl for --retry-all-errors support
+        run: sudo snap install curl
 
       - name: Test snapcraft.io
         run: |
           git clone https://github.com/canonical-web-and-design/snapcraft.io
+          chmod -R 777 snapcraft.io
           cd snapcraft.io
-          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
-
-  test-dotrun-mac:
-    runs-on: macos-latest
-    name: Test dotrun
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install dotrun
-        run: |
-          pip3 install .
-
-      - name: Test ubuntu.com
-        run: |
-          git clone https://github.com/canonical-web-and-design/ubuntu.com
-          cd ubuntu.com
-          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
-
-      - name: Test snapcraft.io
-        run: |
-          git clone https://github.com/canonical-web-and-design/snapcraft.io
-          cd snapcraft.io
-          dotrun & curl --head --fail --retry-delay 1 --retry 30 --retry-connrefused http://localhost:8001
+          dotrun & sleep 10 && /snap/bin/curl --head --fail --retry-delay 10 --retry 30 --retry-all-errors http://localhost:8004
 
   lint-python:
     runs-on: ubuntu-latest
