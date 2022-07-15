@@ -9,8 +9,8 @@
 Features:
 
 - Make use of standard `package.json` script entrypoints:
-  - `dotrun` runs `yarn run start` within the snap confinement
-  - `dotrun foo` runs `yarn run foo` within the snap confinement
+  - `dotrun` runs `yarn run start` within the Docker container
+  - `dotrun foo` runs `yarn run foo` within the Docker container
 - Detect changes in `package.json` and only run `yarn install` when needed
 - Detect changes in `requirements.txt` and only run `pip3 install` when needed
 - Run scripts using environment variables from `.env` and `.env.local` files
@@ -66,22 +66,9 @@ To fully support dotrun in a new project you should do the following:
 
 However, once you're ready to completely switch over to `dotrun`, simply go ahead and remove the `run` script.
 
-## Testing
-
-The `test` folder contains a bunch of tests, written in Python, against the `dotrun` binary, using example projects in the `test/fixtures` folder.
-
-These tests can be run against the current codebase:
-
-```bash
-python3 -m venv .venv  # Create a python environment for testing
-source .venv/bin/activate
-pip3 install -e .  # Install the dotrun module as a python package
-python3 -m unittest discover --start-directory tests  # Run the tests against the installed python package
-```
-
 ### Automated tests of pull requests
 
-[The "PR" action](.github/workflows/pr.yaml) builds the Python package and runs the `tests`, similar to the solution above. This will run against every pull request.
+[The "PR" action](.github/workflows/pr.yaml) builds the Python package and runs a project with dotrun. This will run against every pull request.
 
 ### Publish
 
