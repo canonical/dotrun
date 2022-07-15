@@ -4,13 +4,13 @@
 
 [![dotrun](https://snapcraft.io//dotrun/badge.svg)](https://snapcraft.io/dotrun)
 
-`dotrun` makes use of [snap confinement](https://snapcraft.io/docs/snap-confinement) to provide a predictable sandbox for running Node and Python projects.
+`dotrun` makes use of a [Docker image](https://github.com/canonical/dotrun-image/) to provide a predictable sandbox for running Node and Python projects.
 
 Features:
 
 - Make use of standard `package.json` script entrypoints:
-  - `dotrun` runs `yarn run start` within the snap confinement
-  - `dotrun foo` runs `yarn run foo` within the snap confinement
+  - `dotrun` runs `yarn run start` within the Docker container
+  - `dotrun foo` runs `yarn run foo` within the Docker container
 - Detect changes in `package.json` and only run `yarn install` when needed
 - Detect changes in `requirements.txt` and only run `pip3 install` when needed
 - Run scripts using environment variables from `.env` and `.env.local` files
@@ -31,55 +31,29 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ## Installation
 
-### Ubuntu
-
-The best way to install dotrun with all the requirements is by running the following script:
-```bash
-curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/main/scripts/install-dotrun-docker.sh | bash
+To install dotrun run:
+```
+sudo pip3 install dotrun
 ```
 
-**What the script does**
+### Requirements
 
-- Add the user to the docker group
-- Install the dotrun snap and the docker snap
-- It will also set the needed [plugs](https://snapcraft.io/docs/interface-management):
-  - `dotrun:dot-npmrc` gives the snap access to read the `~/.npmrc`
-  - `dotrun:dot-yarnrc` gives the snap access to read the `~/.yarnrc`
-  - `dotrun:docker-executables docker:docker-executables dotrun:docker-cli docker:docker-daemon` will make it possible to the dotrun snap to use docker. These docker plugs and the docker snap are optional but needed for projects with `docker-compose.yaml` files.
+- Linux / macOS
+- Docker ([Get Docker](https://docs.docker.com/get-docker/))
+- Python > 3.6 and PIP
 
-### MacOS
+### macOS performance
 
-On MacOS, `dotrun` should be installed and run inside [a multipass VM](https://multipass.run/), using `sudo snap install dotrun` as above. Any server running within the multipass VM will then be available at the VM's IP address, which can be obtained from `multipass list`.
+For optimal performance on Docker we recommend enabling a new experimental file sharing implementation called virtiofs. Virtiofs is only available to users of the following macOS versions:
+- macOS 12.2 and above (for Apple Silicon)
+- macOS 12.3 and above (for Intel)
 
-Given that file access over a virtual network share [is incredibly slow](https://forums.docker.com/t/file-access-in-mounted-volumes-extremely-slow-cpu-bound/8076) in MacOS, it is recommended to keep your project files inside the multipass VM directly and then share them with your host system from there if you want to open them in a graphical editor.
+[How to enable virtiofs](https://www.docker.com/blog/speed-boost-achievement-unlocked-on-docker-desktop-4-6-for-mac/)
 
-See @hatched's [guide](https://fromanegg.com/post/2020/02/28/use-ubuntu-on-mac-os-with-multipass/) for how to achieve this setup.
 
-#### Automated installation with Multipass
+## Add dotrun on new projects
 
-We are maintaining a bash script that will install Multipass in your system and configure your machine to proxy the dotrun command to a Multipass instance.
-
-To use it:
-```bash
-curl -s https://raw.githubusercontent.com/canonical-web-and-design/dotrun/main/scripts/install-with-multipass.sh | bash
-```
-
-It will create a `dotrun-projects` folder in your home directory, you can clone projects here and use `dotrun` transparently.
-
-## Converting existing projects
-
-On the whole, our existing projects should run out of the box with:
-
-```bash
-dotrun build
-dotrun serve
-```
-
-A caveat to this for our Python website projects is that `dotrun` will only work with [Gunicorn](https://pypi.org/project/gunicorn/) >= `20.0.0`. To achieve this, our projects should upgrade to using at least version `0.4.3` of [flask-base](https://github.com/canonical-web-and-design/canonicalwebteam.flask-base/).
-
-**Updating projects**
-
-To fully support it you should do the following:
+To fully support dotrun in a new project you should do the following:
 
 - For Python projects, ensure [Talisker](https://pypi.org/project/talisker/) is at `0.16.0` or greater in `requirements.txt`
 - Add `.dotrun.json` and `.venv` to `.gitignore`
@@ -90,47 +64,12 @@ To fully support it you should do the following:
   - The update [landed in Talisker](https://github.com/canonical-ols/talisker/pull/502) but at the time of writing hasn't made it into a new version
   - If there's no new version of Talisker, simply add `gunicorn==20.0.4` to the bottom of `requirements.txt`
 
-These steps can be completed without effecting the old `./run` script, which should continue working.
-
 However, once you're ready to completely switch over to `dotrun`, simply go ahead and remove the `run` script.
-
-## Testing
-
-The `test` folder contains a bunch of tests, written in Python, against the `dotrun` binary, using example projects in the `test/fixtures` folder.
-
-These tests can be run against the current codebase in a couple of different ways:
-
-### Testing the python module
-
-This is the quickest way to test the code, but it's not as complete as it won't find error that might relate to the snap confinement.
-
-```bash
-python3 -m venv .venv  # Create a python environment for testing
-source .venv/bin/activate
-pip3 install -e .  # Install the dotrun module as a python package
-python3 -m unittest discover --start-directory tests  # Run the tests against the installed python package
-```
-
-### Testing the snap
-
-To do a complete test, it's wise to build the snap from the current codebase and then test the snap itself.
-
-If you have [multipass](https://multipass.run/) installed, you can do this using multipass for confinement pretty simply:
-
-```bash
-scripts/test-snap-using-multipass
-```
-
-This runs the same tests in the `tests` directory against an actual snap installed into multipass.
 
 ### Automated tests of pull requests
 
-[The "PR" action](.github/workflows/pr.yaml) builds the snap and runs the `tests`, similar to the "multipass" solution above. This will run against every pull request.
+[The "PR" action](.github/workflows/pr.yaml) builds the Python package and runs a project with dotrun. This will run against every pull request.
 
 ### Publish
 
-All the changes made to the master branch will be automatically published in the candidate track of the snap. To use candidate:
-
-```bash
-sudo snap install dotrun --candidate
-```
+All the changes made to the main branch will be automatically published as a new version on PyPI.

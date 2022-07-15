@@ -1,37 +1,26 @@
 name: PR
-on: [pull_request]
+on: pull_request
 
 jobs:
-  test-snap:
-    runs-on: ubuntu-18.04
-    name: Test snap
+  test-dotrun-ubuntu:
+    runs-on: ubuntu-latest
+    name: Test dotrun on Ubuntu (snapcraft.io project)
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install Snapcraft with LXD
-        uses: samuelmeuli/action-snapcraft@v1
-        with:
-          use_lxd: true
+      - name: Install dotrun
+        run: pip3 install .
 
-      - name: Build snap
-        run: sg lxd -c 'snapcraft --use-lxd'
+      - name: Install newest version of curl for --retry-all-errors support
+        run: sudo snap install curl
 
-      - name: Install dotrun snap
+      - name: Test snapcraft.io
         run: |
-          sudo rm -rf /etc/docker
-          sudo snap install --dangerous dotrun_*.snap
-
-      - name: Run tests
-        run: |
-          pip3 install pexpect
-          export PATH=/snap/bin:$PATH
-          python3 -m unittest discover --verbose --start-directory tests
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: dotrun-snap
-          path: dotrun_*.snap
+          git clone https://github.com/canonical-web-and-design/snapcraft.io
+          chmod -R 777 snapcraft.io
+          cd snapcraft.io
+          dotrun & sleep 10 && /snap/bin/curl --head --fail --retry-delay 10 --retry 30 --retry-all-errors http://localhost:8004
 
   lint-python:
     runs-on: ubuntu-latest
@@ -46,7 +35,7 @@ jobs:
           sudo pip3 install flake8 black
       - name: Lint Python
         run: flake8 . && black --line-length 79 --check .
-        
+
   check-inclusive-naming:
     runs-on: ubuntu-latest
 
