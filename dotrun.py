@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import threading
 from importlib import metadata
 
@@ -9,6 +10,7 @@ from importlib import metadata
 import docker
 import dockerpty
 from dotenv import dotenv_values
+from slugify import slugify
 
 __version__ = metadata.version("dotrun")
 
@@ -89,7 +91,19 @@ class Dotrun:
         ]
 
     def create_container(self, command):
-        name = f"dotrun-{self.project_name}"
+        name = f"dotrun-{self.project_name}-{int(time.time())}"
+        ports = {self.project_port: self.project_port}
+
+        if command[1:]:
+            first_cmd = command[1:][0]
+
+            # Avoid port conflict when running multiple commands
+            if first_cmd not in ["start", "serve"]:
+                ports = {}
+
+            # Set a different container name to run a specific command
+            name_cmd = slugify(" ".join(command[1:]))
+            name = f"{name}-{name_cmd}-{int(time.time())}"
 
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
@@ -101,7 +115,7 @@ class Dotrun:
             stdin_open=True,
             tty=True,
             command=command,
-            ports={self.project_port: self.project_port},
+            ports=ports,
         )
 
 

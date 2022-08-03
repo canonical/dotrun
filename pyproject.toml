@@ -1,7 +1,7 @@
 [tool.poetry]
 name = 'dotrun'
-version = '2.0.0'
-description = ''
+version = '2.0.1'
+description = 'A tool for developing Node.js and Python projects'
 authors = ['Canonical Web Team <webteam@canonical.com>']
 license = 'LGPL-3.0'
 readme = 'README.md'
@@ -12,6 +12,7 @@ dotrun = "dotrun:cli"
 [tool.poetry.dependencies]
 python = '^3.6'
 python-dotenv = '0.20.0'
+python-slugify = '6.1.2'
 docker = '5.0.3'
 dockerpty = '0.4.1'
 
