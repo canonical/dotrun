@@ -2,8 +2,6 @@
 
 # A tool for developing Node.js and Python projects
 
-[![dotrun](https://snapcraft.io//dotrun/badge.svg)](https://snapcraft.io/dotrun)
-
 `dotrun` makes use of a [Docker image](https://github.com/canonical/dotrun-image/) to provide a predictable sandbox for running Node and Python projects.
 
 Features:
