@@ -2,6 +2,7 @@
 
 import os
 import sys
+import re
 import time
 import threading
 from importlib import metadata
@@ -18,7 +19,7 @@ __version__ = metadata.version("dotrun")
 class Dotrun:
     def __init__(self):
         self.cwd = os.getcwd()
-        self.project_name = os.path.basename(self.cwd)
+        self.project_name = slugify(os.path.basename(self.cwd))
         self.project_port = dotenv_values(".env").get("PORT", 8080)
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
@@ -90,8 +91,27 @@ class Dotrun:
             ),
         ]
 
+    def _get_container_name(self, command=None):
+        """
+        Return a simple name to easily identify the container on Docker
+        """
+        name = ["dotrun"]
+
+        if self.project_name:
+            name.append(self.project_name)
+
+        if command:
+            name.append(slugify(command))
+
+        # Timestamp so we don't get name collisions
+        name.append(str(int(time.time())))
+
+        name = "-".join(name)
+
+        # Remove duplicated hyphens
+        return re.sub(r"(-)+", r"\1", name)
+
     def create_container(self, command):
-        name = f"dotrun-{self.project_name}-{int(time.time())}"
         ports = {self.project_port: self.project_port}
 
         if command[1:]:
@@ -102,8 +122,9 @@ class Dotrun:
                 ports = {}
 
             # Set a different container name to run a specific command
-            name_cmd = slugify(" ".join(command[1:]))
-            name = f"{name}-{name_cmd}-{int(time.time())}"
+            name = self._get_container_name(first_cmd)
+        else:
+            name = self._get_container_name()
 
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
@@ -129,8 +150,14 @@ def cli():
 
     container = dotrun.create_container(command)
 
+    # 1 by default
+    status_code = 1
+
     try:
         dockerpty.start(dotrun.docker_client.api, container.id)
+        status_code = container.wait().get("StatusCode", 1)
     finally:
         container.stop()
         container.remove()
+
+    return status_code
