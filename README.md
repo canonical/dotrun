@@ -1,4 +1,4 @@
-![dotrun](https://assets.ubuntu.com/v1/9dcb3655-dotrun.png?w=200)
+![dotrun](https://assets.ubuntu.com/v1/14a3bac5-dotrun.svg?w=200)
 
 # A tool for developing Node.js and Python projects
 
