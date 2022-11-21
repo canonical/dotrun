@@ -29,8 +29,25 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ## Installation
 
+### Linux
+
 To install dotrun run:
+
 ```
+sudo apt install python3-pip
+sudo pip3 install dotrun
+```
+
+### Mac
+
+To install dotrun on a mac you will need [Homebrew](https://brew.sh/) (follow
+the install
+instructions on that page).
+
+Then run:
+
+```
+brew install python3
 sudo pip3 install dotrun
 ```
 
@@ -43,11 +60,11 @@ sudo pip3 install dotrun
 ### macOS performance
 
 For optimal performance on Docker we recommend enabling a new experimental file sharing implementation called virtiofs. Virtiofs is only available to users of the following macOS versions:
+
 - macOS 12.2 and above (for Apple Silicon)
 - macOS 12.3 and above (for Intel)
 
 [How to enable virtiofs](https://www.docker.com/blog/speed-boost-achievement-unlocked-on-docker-desktop-4-6-for-mac/)
-
 
 ## Add dotrun on new projects
 
