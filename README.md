@@ -29,6 +29,12 @@ $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 
 ## Installation
 
+### Docker
+
+First, install Docker ([Get Docker](https://docs.docker.com/get-docker/)).
+
+Linux users may also need to follow the [post install instructions](https://docs.docker.com/engine/install/linux-postinstall/) to be able to run Docker as a non-root user.
+
 ### Linux
 
 To install dotrun run:
