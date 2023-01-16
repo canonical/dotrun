@@ -79,6 +79,7 @@ parts:
       - libxfixes3
       - libxkbcommon-x11-0
       - libxrandr2
+      - libwayland-client.so.0
 plugs:
   dot-npmrc:
     interface: personal-files
