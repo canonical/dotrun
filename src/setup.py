@@ -16,6 +16,7 @@ setup(
     install_requires=[
         "ipdb",
         "black",
+        "wheel",
         "flake8",
         "termcolor",
         "virtualenv",

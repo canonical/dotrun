@@ -1,6 +1,6 @@
 name: dotrun
 
-version: "1.4.8"
+version: "1.4.9"
 
 summary: A command-line tool for running Node.js and Python projects
 
@@ -79,7 +79,7 @@ parts:
       - libxfixes3
       - libxkbcommon-x11-0
       - libxrandr2
-      - libwayland-client.so.0
+      - libwayland-dev
 plugs:
   dot-npmrc:
     interface: personal-files

@@ -11,3 +11,4 @@ v1.1.7, 2020-04-20 -- Dependencies for python-gnupg
 v1.1.8, 2020-09-15 -- Update python dependencies
 v1.3.0, 2021-06-22 -- Bump node to 16.3.0
 v1.4.3, 2022-02-06 -- Fix docker-compose starting with -C option
+v1.4.9, 2023-02-02 -- Fix snap build by switching to libwayland-dev
