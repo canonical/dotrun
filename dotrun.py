@@ -151,8 +151,7 @@ class Dotrun:
             return mounts
 
         if "-m" in command:
-            mounts = []
-            get_mount(command, mounts)
+            mounts = get_mount(command, [])
 
             return mounts
         return None
