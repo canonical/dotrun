@@ -78,8 +78,8 @@ class Dotrun:
                 remove=True,
             )
 
-    def _prepare_mounts(self):
-        return [
+    def _prepare_mounts(self, additional_mounts):
+        mounts = [
             docker.types.Mount(
                 target=f"{self.container_home}.cache",
                 source="dotrun-cache",
@@ -96,6 +96,18 @@ class Dotrun:
                 consistency="cached",
             ),
         ]
+        if additional_mounts:
+            for mount in additional_mounts:
+                mounts.append(
+                    docker.types.Mount(
+                        target=f"{self.container_path}/{mount[1]}",
+                        source=f"{mount[0]}",
+                        type="bind",
+                        read_only=False,
+                        consistency="cached",
+                    )
+                )
+        return mounts
 
     def _get_container_name(self, command=None):
         """
@@ -117,6 +129,34 @@ class Dotrun:
         # Remove duplicated hyphens
         return re.sub(r"(-)+", r"\1", name)
 
+    def _get_additional_mounts(self, command=None):
+        """
+        Return a list of additional mounts
+        """
+        if not command:
+            return None
+
+        def get_mount(command, mounts):
+            mount_index = command.index("-m")
+            mount_string = command[mount_index + 1]
+            del command[mount_index]
+            if ":" in mount_string:
+                mount_parts = mount_string.split(":")
+                mounts.append(mount_parts)
+                del command[mount_index]
+
+            if "-m" in command:
+                mounts = mounts + get_mount(command, mounts)
+
+            return mounts
+
+        if "-m" in command:
+            mounts = []
+            get_mount(command, mounts)
+
+            return mounts
+        return None
+
     def create_container(self, command):
         ports = {self.project_port: self.project_port}
         # Run on the same network mode as the host
@@ -136,11 +176,14 @@ class Dotrun:
             # network_mode host is incompatible with ports option
             ports = None
             network_mode = "host"
+
+        additional_mounts = self._get_additional_mounts(command)
+
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
             name=name,
             hostname=name,
-            mounts=self._prepare_mounts(),
+            mounts=self._prepare_mounts(additional_mounts),
             working_dir=self.container_path,
             environment=[f"DOTRUN_VERSION={__version__}"],
             stdin_open=True,
