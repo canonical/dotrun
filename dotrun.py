@@ -178,6 +178,7 @@ class Dotrun:
             network_mode = "host"
 
         additional_mounts = self._get_additional_mounts(command)
+        print(command)
 
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
