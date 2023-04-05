@@ -116,7 +116,6 @@ class Dotrun:
     def create_container(self, command):
         ports = {self.project_port: self.project_port}
         # Run on the same network mode as the host
-        # Only when starting a server and on Linux
         network_mode = None
         if command[1:]:
             first_cmd = command[1:][0]
