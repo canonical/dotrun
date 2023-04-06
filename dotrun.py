@@ -23,6 +23,8 @@ class Dotrun:
         self.project_port = dotenv_values(".env").get("PORT", 8080)
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
+        # --network host is only supported on Linux
+        self.network_host_mode = sys.platform.startswith("linux")
         self._get_docker_client()
         self._check_image_updates()
         self._create_cache_volume()
@@ -113,7 +115,8 @@ class Dotrun:
 
     def create_container(self, command):
         ports = {self.project_port: self.project_port}
-
+        # Run on the same network mode as the host
+        network_mode = None
         if command[1:]:
             first_cmd = command[1:][0]
 
@@ -125,7 +128,10 @@ class Dotrun:
             name = self._get_container_name(first_cmd)
         else:
             name = self._get_container_name()
-
+        if self.network_host_mode:
+            # network_mode host is incompatible with ports option
+            ports = None
+            network_mode = "host"
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
             name=name,
@@ -137,6 +143,7 @@ class Dotrun:
             tty=True,
             command=command,
             ports=ports,
+            network_mode=network_mode,
         )
 
 
