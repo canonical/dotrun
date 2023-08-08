@@ -81,7 +81,7 @@ class Dotrun:
                 remove=True,
             )
 
-    def _prepare_mounts(self):
+    def _prepare_mounts(self, command):
         mounts = [
             docker.types.Mount(
                 target=f"{self.container_home}.cache",
@@ -99,8 +99,10 @@ class Dotrun:
                 consistency="cached",
             ),
         ]
-        if self.additional_mounts:
-            for mount in self.additional_mounts:
+
+        additional_mounts = self._get_additional_mounts(command)
+        if additional_mounts:
+            for mount in additional_mounts:
                 mounts.append(
                     docker.types.Mount(
                         target=f"{self.container_path}/{mount[1]}",
@@ -132,12 +134,12 @@ class Dotrun:
         # Remove duplicated hyphens
         return re.sub(r"(-)+", r"\1", name)
 
-    def _set_additional_mounts(self, command=None):
+    def _get_additional_mounts(self, command):
         """
         Return a list of additional mounts
         """
-        if not command:
-            return None
+        if "-m" not in command:
+            return
 
         def get_mount(command, mounts):
             mount_index = command.index("-m")
@@ -153,11 +155,7 @@ class Dotrun:
 
             return mounts
 
-        if "-m" in command:
-            mounts = get_mount(command, [])
-
-            self.additional_mounts = mounts
-        return None
+        return get_mount(command, [])
 
     def create_container(self, command):
         ports = {self.project_port: self.project_port}
@@ -179,13 +177,11 @@ class Dotrun:
             ports = None
             network_mode = "host"
 
-        self._set_additional_mounts(command)
-
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
             name=name,
             hostname=name,
-            mounts=self._prepare_mounts(),
+            mounts=self._prepare_mounts(command),
             working_dir=self.container_path,
             environment=[f"DOTRUN_VERSION={__version__}"],
             stdin_open=True,
