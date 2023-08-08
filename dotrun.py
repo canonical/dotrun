@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 
 import os
-import sys
+import platform
 import re
+import sys
 import time
 import threading
 from importlib import metadata
@@ -24,7 +25,10 @@ class Dotrun:
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
-        self.network_host_mode = sys.platform.startswith("linux")
+        self.network_host_mode = (
+            sys.platform.startswith("linux")
+            and "microsoft" not in platform.platform()
+        )
         self._get_docker_client()
         self._check_image_updates()
         self._create_cache_volume()
