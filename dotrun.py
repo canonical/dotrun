@@ -24,6 +24,7 @@ class Dotrun:
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
         self.project_port = dotenv_values(".env").get("PORT", 8080)
+        self.additional_mounts = []
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
@@ -80,7 +81,7 @@ class Dotrun:
                 remove=True,
             )
 
-    def _prepare_mounts(self, additional_mounts):
+    def _prepare_mounts(self):
         mounts = [
             docker.types.Mount(
                 target=f"{self.container_home}.cache",
@@ -98,8 +99,8 @@ class Dotrun:
                 consistency="cached",
             ),
         ]
-        if additional_mounts:
-            for mount in additional_mounts:
+        if self.additional_mounts:
+            for mount in self.additional_mounts:
                 mounts.append(
                     docker.types.Mount(
                         target=f"{self.container_path}/{mount[1]}",
@@ -131,7 +132,7 @@ class Dotrun:
         # Remove duplicated hyphens
         return re.sub(r"(-)+", r"\1", name)
 
-    def _get_additional_mounts(self, command=None):
+    def _set_additional_mounts(self, command=None):
         """
         Return a list of additional mounts
         """
@@ -148,14 +149,14 @@ class Dotrun:
                 del command[mount_index]
 
             if "-m" in command:
-                mounts = mounts + get_mount(command, mounts)
+                mounts = get_mount(command, mounts)
 
             return mounts
 
         if "-m" in command:
             mounts = get_mount(command, [])
 
-            return mounts
+            self.additional_mounts = mounts
         return None
 
     def create_container(self, command):
@@ -166,7 +167,8 @@ class Dotrun:
             first_cmd = command[1:][0]
 
             # Avoid port conflict when running multiple commands
-            if first_cmd not in ["start", "serve"]:
+            if first_cmd not in ["start", "serve", "-m"]:
+                print("not serve or start")
                 ports = {}
 
             # Set a different container name to run a specific command
@@ -178,13 +180,13 @@ class Dotrun:
             ports = None
             network_mode = "host"
 
-        additional_mounts = self._get_additional_mounts(command)
+        self._set_additional_mounts(command)
 
         return self.docker_client.containers.create(
             image="canonicalwebteam/dotrun-image",
             name=name,
             hostname=name,
-            mounts=self._prepare_mounts(additional_mounts),
+            mounts=self._prepare_mounts(),
             working_dir=self.container_path,
             environment=[f"DOTRUN_VERSION={__version__}"],
             stdin_open=True,

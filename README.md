@@ -18,6 +18,7 @@ Features:
 
 ```bash
 $ dotrun          # Install dependencies and run the `start` script from package.json
+$ dotrun serve    # Run the python app only
 $ dotrun clean    # Delete `node_modules`, `.venv`, `.dotrun.json`, and run `yarn run clean`
 $ dotrun install  # Force install node and python dependencies
 $ dotrun exec     # Start a shell inside the dotrun environment
@@ -25,6 +26,8 @@ $ dotrun exec {command}          # Run {command} inside the dotrun environment
 $ dotrun {script-name}           # Install dependencies and run `yarn run {script-name}`
 $ dotrun -s {script}             # Run {script} but skip installing dependencies
 $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
+$ dotrun -m "/path/to/mount":"localname"       # Mount additional directory and run `dotrun`
+$ dotrun serve -m "/path/to/mount":"localname" # Mount additional directory and run `dotrun serve`
 ```
 
 ## Installation
