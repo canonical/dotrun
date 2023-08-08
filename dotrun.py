@@ -25,7 +25,10 @@ class Dotrun:
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
-        self.network_host_mode = sys.platform.startswith("linux") and "microsoft" not in platform.platform()
+        self.network_host_mode = (
+            sys.platform.startswith("linux")
+            and "microsoft" not in platform.platform()
+        )
         self._get_docker_client()
         self._check_image_updates()
         self._create_cache_volume()
