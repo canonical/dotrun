@@ -168,7 +168,6 @@ class Dotrun:
 
             # Avoid port conflict when running multiple commands
             if first_cmd not in ["start", "serve", "-m"]:
-                print("not serve or start")
                 ports = {}
 
             # Set a different container name to run a specific command
