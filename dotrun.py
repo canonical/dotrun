@@ -24,7 +24,6 @@ class Dotrun:
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
         self.project_port = dotenv_values(".env").get("PORT", 8080)
-        self.additional_mounts = []
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
