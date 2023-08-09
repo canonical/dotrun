@@ -74,7 +74,7 @@ class Dotrun:
                 "canonicalwebteam/dotrun-image",
                 f"chown -R ubuntu:ubuntu {self.container_home}.cache",
                 user="root",
-                mounts=self._prepare_mounts(),
+                mounts=self._prepare_mounts([]),
                 remove=True,
             )
 
