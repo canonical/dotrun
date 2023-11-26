@@ -34,7 +34,7 @@ $ dotrun serve -m "/path/to/mount":"localname" # Mount additional directory and 
 
 ### Docker
 
-First, install Docker ([Get Docker](https://docs.docker.com/get-docker/)).
+First, install [Docker](https://docs.docker.com/get-docker/). On Linux, you can install [Docker snap](https://snapcraft.io/docker) instead.
 
 Linux users may also need to follow the [post install instructions](https://docs.docker.com/engine/install/linux-postinstall/) to be able to run Docker as a non-root user.
 
