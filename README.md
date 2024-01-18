@@ -97,3 +97,11 @@ However, once you're ready to completely switch over to `dotrun`, simply go ahea
 ### Publish
 
 All the changes made to the main branch will be automatically published as a new version on PyPI.
+
+To publish a new version manually, run:
+
+```
+docker buildx create --name mybuilder
+docker buildx use mybuilder
+docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag canonicalwebteam/dotrun-image:latest .
+```
