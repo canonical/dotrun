@@ -17,7 +17,7 @@ jobs:
 
       - name: Test snapcraft.io
         run: |
-          git clone https://github.com/canonical-web-and-design/snapcraft.io
+          git clone https://github.com/canonical/snapcraft.io
           chmod -R 777 snapcraft.io
           cd snapcraft.io
           dotrun & sleep 10 && /snap/bin/curl --head --fail --retry-delay 10 --retry 30 --retry-all-errors http://localhost:8004
