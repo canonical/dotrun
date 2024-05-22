@@ -10,7 +10,7 @@ readme = 'README.md'
 dotrun = "dotrun:cli"
 
 [tool.poetry.dependencies]
-python = '^3.6'
+python = '^3.8'
 python-dotenv = '0.20.0'
 python-slugify = '6.1.2'
 docker = '7.0.0'
