@@ -11,6 +11,7 @@ from importlib import metadata
 # Packages
 import docker
 import dockerpty
+import requests
 from dotenv import dotenv_values
 from slugify import slugify
 
@@ -18,6 +19,8 @@ __version__ = metadata.version("dotrun")
 
 
 class Dotrun:
+    base_image_name = "canonicalwebteam/dotrun-image:latest"
+
     def __init__(self):
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
@@ -29,9 +32,27 @@ class Dotrun:
             sys.platform.startswith("linux")
             and "microsoft" not in platform.platform()
         )
+                
         self._get_docker_client()
         self._check_image_updates()
         self._create_cache_volume()
+    
+    def _get_release_image_name(self, image_tag="latest"):
+        """
+        Return the image name with the tag in the format
+        canonicalwebteam/dotrun-image:<release_tag>
+        """
+        base_image = self.base_image_name.split(":")[0]
+        return f"{base_image}:{image_tag}"
+    
+    def _get_image_name(self, image_name):
+        """
+        Return a fully qualified image name from a given image 
+        name, defaulting to the :latest tag if none is provided.
+        """
+        if ":" not in image_name:
+            return image_name + ":latest"
+        return image_name
 
     def _get_docker_client(self):
         try:
@@ -48,7 +69,7 @@ class Dotrun:
     def _check_image_updates(self):
         try:
             self.docker_client.images.get(
-                "canonicalwebteam/dotrun-image:latest"
+                self.base_image_name
             )
             # Pull the image in the background
             print("Checking for dotrun image updates...")
@@ -57,11 +78,21 @@ class Dotrun:
             print("Getting the dotrun image...")
             self._pull_image()
 
-    def _pull_image(self):
+    def _pull_image(self, image_name, no_exit=False):
         """Pull the dotrun image (if updated) from Docker Hub"""
-        self.docker_client.images.pull(
-            repository="canonicalwebteam/dotrun-image", tag="latest"
-        )
+        image_uri = self._get_image_name(image_name)      
+        repository, tag = image_uri.split(":")
+        try:
+            self.docker_client.images.pull(
+                repository=repository, tag=tag
+            )
+        except (docker.errors.APIError, docker.errors.ImageNotFound) as e:
+            print(f"Unable to download image: {image_name}")
+            # Optionally quit if image download fails
+            if not no_exit:
+                print(e)
+                sys.exit(1)
+            print(f"Attempting to use local image: {image_name}")
 
     def _create_cache_volume(self):
         try:
@@ -71,7 +102,7 @@ class Dotrun:
 
             # We need to fix the volume ownership
             self.docker_client.containers.run(
-                "canonicalwebteam/dotrun-image",
+                self.base_image_name,
                 f"chown -R ubuntu:ubuntu {self.container_home}.cache",
                 user="root",
                 mounts=self._prepare_mounts([]),
@@ -154,7 +185,9 @@ class Dotrun:
 
         return get_mount(command, [])
 
-    def create_container(self, command):
+    def create_container(self, command, image_name=None):
+        if not image_name:
+            image_name = self.base_image_name
         ports = {self.project_port: self.project_port}
         # Run on the same network mode as the host
         network_mode = None
@@ -173,9 +206,9 @@ class Dotrun:
             # network_mode host is incompatible with ports option
             ports = None
             network_mode = "host"
-
+        
         return self.docker_client.containers.create(
-            image="canonicalwebteam/dotrun-image",
+            image=image_name,
             name=name,
             hostname=name,
             mounts=self._prepare_mounts(command),
@@ -188,6 +221,35 @@ class Dotrun:
             network_mode=network_mode,
         )
 
+def _start_container_with_image(dotrun, command_list, command_match, format="tag"):
+    """
+    Utility function to start dotrun using a specified 
+    image.
+    """
+    # Extract the argument from the cli arg
+    image_command = command_match.group(0)
+    try:
+        image_data = image_command.split(' ')[1]
+    except IndexError:
+        print("Image name not supplied.")
+        sys.exit(1)
+
+    # Determine the image name
+    if format == "release":
+        image_uri = dotrun._get_release_image_name(image_data)
+    else:
+        image_uri = dotrun._get_image_name(image_data) 
+    print(f"Using image: {image_uri}")
+
+    # Download the image
+    dotrun._pull_image(image_uri, no_exit=True)
+    
+    # Remove the image command from command list
+    new_command_list = ' '.join(command_list).replace(image_command, '').replace('  ', ' ')
+    command_list = new_command_list.split(' ')
+
+    # Start dotrun from the supplied base image
+    return dotrun.create_container(command_list, image_name=image_uri)
 
 def cli():
     dotrun = Dotrun()
@@ -196,8 +258,20 @@ def cli():
 
     if command[-1] == "version":
         print(f"dotrun v{__version__}")
-
-    container = dotrun.create_container(command)
+        sys.exit(1)
+    
+    if command[-1] == "refresh":
+        dotrun._pull_image()
+        print("Latest image pulled successfully.")
+        sys.exit(1)
+    
+    # Options for starting the container on different base images
+    if match := re.search(r'--image [^\s]+', ' '.join(command)):
+        container = _start_container_with_image(dotrun, command, match)
+    elif match := re.search(r'--release [^\s]+', ' '.join(command)):
+        container = _start_container_with_image(dotrun, command, match, format="release")
+    else:
+        container = dotrun.create_container(command)
 
     # 1 by default
     status_code = 1
@@ -210,3 +284,6 @@ def cli():
         container.remove()
 
     return status_code
+
+if __name__ == "__main__":
+    cli()
