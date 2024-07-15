@@ -111,16 +111,17 @@ docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --
 
 ## Hacking
 
-To quickly build and test changes to the package, first install poetry:
+You can install the package locally using either pip or poetry.
+
+### Using pip
 ```bash
-pip install poetry
-poetry install
-chmod +x build.sh
+pip3 install . requests==2.31.0
 ```
 
-Then you can build and install .whl packages using:
+### Using Poetry
 ```bash
-./build.sh
+pip install poetry
+poetry install --no-interaction
 ```
 
 To run dotrun off alternative base images such as local images, you can use the `--image` flag.
