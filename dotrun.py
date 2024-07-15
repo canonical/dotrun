@@ -78,8 +78,10 @@ class Dotrun:
             print("Getting the dotrun image...")
             self._pull_image()
 
-    def _pull_image(self, image_name, no_exit=False):
+    def _pull_image(self, image_name=None, no_exit=False):
         """Pull the dotrun image (if updated) from Docker Hub"""
+        if not image_name:
+            image_name = self.base_image_name
         image_uri = self._get_image_name(image_name)      
         repository, tag = image_uri.split(":")
         try:
