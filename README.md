@@ -33,7 +33,7 @@ $ dotrun --release {release-version} # Use a specific image tag for dotrun. Usef
 $ dotrun --image {image-name} # Use a specific image for dotrun. Useful for running dotrun off local images
 ```
 
-- Note that the `--image` and `--release` arguments cannot be used together, as `--release` will take precedence over `--image`
+- Note that the `--image` and `--release` arguments cannot be used together, as `--image` will take precedence over `--release`
 
 ## Installation
 
