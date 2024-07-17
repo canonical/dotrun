@@ -210,15 +210,16 @@ class Dotrun:
             network_mode=network_mode,
         )
 
+
 def _get_cli_command_arg(pattern, command_list):
     """
     Return the value from the format
-    
+
     --command <value>
-     
+
     and remove the command from the command list.
     """
-    pattern = re.compile(f"--{pattern} [^\s]+")
+    pattern = re.compile(f"--{pattern} [^\s]+")  # noqa
     if match := re.search(pattern, " ".join(command_list)):
         # Extract the value from the cli arg
         command_arg = match.group(0)
@@ -235,6 +236,7 @@ def _get_cli_command_arg(pattern, command_list):
         return value, new_command_list.split(" ")
     return None
 
+
 def _handle_image_cli_param(dotrun, command_list):
     """
     Handle the --image cli parameter, if supplied, and return the
@@ -244,7 +246,11 @@ def _handle_image_cli_param(dotrun, command_list):
         image_name, commands = result
         # Sanitize the image name
         image_name = dotrun._get_image_name(image_name)
-        return _start_container_with_image(dotrun, image_name, commands), commands
+        return (
+            _start_container_with_image(dotrun, image_name, commands),
+            commands,
+        )
+
 
 def _handle_release_cli_param(dotrun, command_list):
     """
@@ -256,21 +262,22 @@ def _handle_release_cli_param(dotrun, command_list):
         # Get the release image uri
         image_name, _ = dotrun.base_image_name.split(":")
         image_tag = f"{image_name}:{image_tag}"
-        return _start_container_with_image(dotrun, image_tag, commands), commands
+        return (
+            _start_container_with_image(dotrun, image_tag, commands),
+            commands,
+        )
 
-def _start_container_with_image(
-    dotrun, image_uri, command_list
-):
+
+def _start_container_with_image(dotrun, image_uri, command_list):
     """
     Utility function to start dotrun using a specified
     image.
     """
-    
+
     print(f"Using image: {image_uri}")
 
     # Download the image
     dotrun._pull_image(image_uri, no_exit=True)
-
 
     # Start dotrun from the supplied base image
     try:
