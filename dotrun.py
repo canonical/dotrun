@@ -36,14 +36,6 @@ class Dotrun:
         self._check_image_updates()
         self._create_cache_volume()
 
-    def _get_release_image_name(self, image_tag="latest"):
-        """
-        Return the image name with the tag in the format
-        canonicalwebteam/dotrun-image:<release_tag>
-        """
-        base_image = self.base_image_name.split(":")[0]
-        return f"{base_image}:{image_tag}"
-
     def _get_image_name(self, image_name):
         """
         Return a fully qualified image name from a given image
@@ -218,40 +210,74 @@ class Dotrun:
             network_mode=network_mode,
         )
 
+def _get_cli_command_arg(pattern, command_list):
+    """
+    Return the value from the format
+    
+    --command <value>
+     
+    and remove the command from the command list.
+    """
+    pattern = re.compile(f"--{pattern} [^\s]+")
+    if match := re.search(pattern, " ".join(command_list)):
+        # Extract the value from the cli arg
+        command_arg = match.group(0)
+        try:
+            value = command_arg.split(" ")[1]
+        except IndexError:
+            print(f"Value for arg {command_arg} not supplied.")
+            sys.exit(1)
+
+        # Remove the image command from command list
+        new_command_list = (
+            " ".join(command_list).replace(command_arg, "").replace("  ", " ")
+        )
+        return value, new_command_list.split(" ")
+    return None
+
+def _handle_image_cli_param(dotrun, command_list):
+    """
+    Handle the --image cli parameter, if supplied, and return the
+    created container and the modified command list.
+    """
+    if result := _get_cli_command_arg("image", command_list):
+        image_name, commands = result
+        # Sanitize the image name
+        image_name = dotrun._get_image_name(image_name)
+        return _start_container_with_image(dotrun, image_name, commands), commands
+
+def _handle_release_cli_param(dotrun, command_list):
+    """
+    Handle the --release cli parameter, if supplied, and return the
+    created container and the modified command list.
+    """
+    if result := _get_cli_command_arg("release", command_list):
+        image_tag, commands = result
+        # Get the release image uri
+        image_name, _ = dotrun.base_image_name.split(":")
+        image_tag = f"{image_name}:{image_tag}"
+        return _start_container_with_image(dotrun, image_tag, commands), commands
 
 def _start_container_with_image(
-    dotrun, command_list, command_match, format="tag"
+    dotrun, image_uri, command_list
 ):
     """
     Utility function to start dotrun using a specified
     image.
     """
-    # Extract the argument from the cli arg
-    image_command = command_match.group(0)
-    try:
-        image_data = image_command.split(" ")[1]
-    except IndexError:
-        print("Image name not supplied.")
-        sys.exit(1)
-
-    # Determine the image name
-    if format == "release":
-        image_uri = dotrun._get_release_image_name(image_data)
-    else:
-        image_uri = dotrun._get_image_name(image_data)
+    
     print(f"Using image: {image_uri}")
 
     # Download the image
     dotrun._pull_image(image_uri, no_exit=True)
 
-    # Remove the image command from command list
-    new_command_list = (
-        " ".join(command_list).replace(image_command, "").replace("  ", " ")
-    )
-    command_list = new_command_list.split(" ")
 
     # Start dotrun from the supplied base image
-    return dotrun.create_container(command_list, image_name=image_uri)
+    try:
+        return dotrun.create_container(command_list, image_name=image_uri)
+    except docker.errors.ImageNotFound as e:
+        print(e)
+        sys.exit(1)
 
 
 def cli():
@@ -268,13 +294,11 @@ def cli():
         print("Latest image pulled successfully.")
         sys.exit(1)
 
-    # Options for starting the container on different base images
-    if match := re.search(r"--image [^\s]+", " ".join(command)):
-        container = _start_container_with_image(dotrun, command, match)
-    elif match := re.search(r"--release [^\s]+", " ".join(command)):
-        container = _start_container_with_image(
-            dotrun, command, match, format="release"
-        )
+    # Options for starting the container using different base images
+    if result := _handle_image_cli_param(dotrun, command):
+        container, command = result
+    elif result := _handle_release_cli_param(dotrun, command):
+        container, command = result
     else:
         container = dotrun.create_container(command)
 
