@@ -10,7 +10,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install dotrun
-        run: pip3 install .
+        run: |
+          pip3 install . requests==2.31.0
 
       - name: Install newest version of curl for --retry-all-errors support
         run: sudo snap install curl

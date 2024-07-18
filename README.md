@@ -28,7 +28,12 @@ $ dotrun -s {script}             # Run {script} but skip installing dependencies
 $ dotrun --env FOO=bar {script}  # Run {script} with FOO environment variable
 $ dotrun -m "/path/to/mount":"localname"       # Mount additional directory and run `dotrun`
 $ dotrun serve -m "/path/to/mount":"localname" # Mount additional directory and run `dotrun serve`
+$ dotrun refresh image # Download the latest version of dotrun-image
+$ dotrun --release {release-version} # Use a specific image tag for dotrun. Useful for switching versions
+$ dotrun --image {image-name} # Use a specific image for dotrun. Useful for running dotrun off local images
 ```
+
+- Note that the `--image` and `--release` arguments cannot be used together, as `--image` will take precedence over `--release`
 
 ## Installation
 
@@ -105,3 +110,34 @@ docker buildx create --name mybuilder
 docker buildx use mybuilder
 docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --tag canonicalwebteam/dotrun-image:latest .
 ```
+
+## Hacking
+
+You can install the package locally using either pip or poetry.
+
+### Using pip
+```bash
+pip3 install . requests==2.31.0
+```
+
+### Using Poetry
+```bash
+pip install poetry
+poetry install --no-interaction
+```
+
+To run dotrun off alternative base images such as local images, you can use the `--image` flag.
+```bash
+dotrun --image "localimage" exec echo hello
+```
+
+To run dotrun off alternative releases, besides the `:latest` release, you can use the `--release` flag.
+```bash
+dotrun --release "latest" serve
+```
+
+Note that before changing the base image you should run 
+```bash
+dotrun clean
+```
+to get rid of the old virtualenv.
