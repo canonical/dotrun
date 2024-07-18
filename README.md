@@ -140,4 +140,4 @@ Note that before changing the base image you should run
 ```bash
 dotrun clean
 ```
-To get rid of the old virtualenv and 
+to get rid of the old virtualenv.

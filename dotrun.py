@@ -18,7 +18,7 @@ __version__ = metadata.version("dotrun")
 
 
 class Dotrun:
-    base_image_name = "canonicalwebteam/dotrun-image:latest"
+    BASE_IMAGE_NAME = "canonicalwebteam/dotrun-image:latest"
 
     def __init__(self):
         self.cwd = os.getcwd()
@@ -59,7 +59,7 @@ class Dotrun:
 
     def _check_image_updates(self):
         try:
-            self.docker_client.images.get(self.base_image_name)
+            self.docker_client.images.get(self.BASE_IMAGE_NAME)
             # Pull the image in the background
             print("Checking for dotrun image updates...")
             threading.Thread(target=self._pull_image)
@@ -67,10 +67,10 @@ class Dotrun:
             print("Getting the dotrun image...")
             self._pull_image()
 
-    def _pull_image(self, image_name=None, no_exit=False):
+    def _pull_image(self, image_name=None, exit_on_download_error=True):
         """Pull the dotrun image (if updated) from Docker Hub"""
         if not image_name:
-            image_name = self.base_image_name
+            image_name = self.BASE_IMAGE_NAME
         image_uri = self._get_image_name(image_name)
         repository, tag = image_uri.split(":")
         try:
@@ -78,7 +78,7 @@ class Dotrun:
         except (docker.errors.APIError, docker.errors.ImageNotFound) as e:
             print(f"Unable to download image: {image_name}")
             # Optionally quit if image download fails
-            if not no_exit:
+            if exit_on_download_error:
                 print(e)
                 sys.exit(1)
             print(f"Attempting to use local image: {image_name}")
@@ -91,7 +91,7 @@ class Dotrun:
 
             # We need to fix the volume ownership
             self.docker_client.containers.run(
-                self.base_image_name,
+                self.BASE_IMAGE_NAME,
                 f"chown -R ubuntu:ubuntu {self.container_home}.cache",
                 user="root",
                 mounts=self._prepare_mounts([]),
@@ -176,7 +176,7 @@ class Dotrun:
 
     def create_container(self, command, image_name=None):
         if not image_name:
-            image_name = self.base_image_name
+            image_name = self.BASE_IMAGE_NAME
         ports = {self.project_port: self.project_port}
         # Run on the same network mode as the host
         network_mode = None
@@ -211,7 +211,7 @@ class Dotrun:
         )
 
 
-def _get_cli_command_arg(pattern, command_list):
+def _extract_cli_command_arg(pattern, command_list):
     """
     Return the value from the format
 
@@ -229,7 +229,7 @@ def _get_cli_command_arg(pattern, command_list):
             print(f"Value for arg {command_arg} not supplied.")
             sys.exit(1)
 
-        # Remove the image command from command list
+        # Remove the command from command list
         new_command_list = (
             " ".join(command_list).replace(command_arg, "").replace("  ", " ")
         )
@@ -242,7 +242,7 @@ def _handle_image_cli_param(dotrun, command_list):
     Handle the --image cli parameter, if supplied, and return the
     created container and the modified command list.
     """
-    if result := _get_cli_command_arg("image", command_list):
+    if result := _extract_cli_command_arg("image", command_list):
         image_name, commands = result
         # Sanitize the image name
         image_name = dotrun._get_image_name(image_name)
@@ -257,10 +257,10 @@ def _handle_release_cli_param(dotrun, command_list):
     Handle the --release cli parameter, if supplied, and return the
     created container and the modified command list.
     """
-    if result := _get_cli_command_arg("release", command_list):
+    if result := _extract_cli_command_arg("release", command_list):
         image_tag, commands = result
         # Get the release image uri
-        image_name, _ = dotrun.base_image_name.split(":")
+        image_name, _ = dotrun.BASE_IMAGE_NAME.split(":")
         image_tag = f"{image_name}:{image_tag}"
         return (
             _start_container_with_image(dotrun, image_tag, commands),
@@ -277,7 +277,7 @@ def _start_container_with_image(dotrun, image_uri, command_list):
     print(f"Using image: {image_uri}")
 
     # Download the image
-    dotrun._pull_image(image_uri, no_exit=True)
+    dotrun._pull_image(image_uri, exit_on_download_error=True)
 
     # Start dotrun from the supplied base image
     try:
