@@ -37,39 +37,52 @@ $ dotrun --image {image-name} # Use a specific image for dotrun. Useful for runn
 
 ## Installation
 
-### Docker
-
-First, install [Docker](https://docs.docker.com/get-docker/). On Linux, you can install [Docker snap](https://snapcraft.io/docker) instead.
-
-Linux users may also need to follow the [post install instructions](https://docs.docker.com/engine/install/linux-postinstall/) to be able to run Docker as a non-root user.
-
-### Linux
-
-To install dotrun run:
-
-```
-sudo apt install python3-pip
-sudo pip3 install dotrun
-```
-
-### Mac
-
-To install dotrun on a mac you will need [Homebrew](https://brew.sh/) (follow
-the install
-instructions on that page).
-
-Then run:
-
-```
-brew install python3
-sudo pip3 install dotrun
-```
-
 ### Requirements
 
-- Linux / macOS
-- Docker ([Get Docker](https://docs.docker.com/get-docker/))
-- Python > 3.6 and PIP
+- Docker ([Get Docker](https://docs.docker.com/get-docker/)): on Linux, you can install the [Docker snap](https://snapcraft.io/docker) instead.
+- Python 3.10 or later
+- On MacOS: [Homebrew](https://docs.brew.sh/Installation) is required
+- `curl` command-line tool (usually pre-installed on macOS and most Linux distributions)
+
+### Linux and MacOS
+
+#### Quick installation
+
+To install dotrun simply run:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/canonical/dotrun/main/scripts/install.sh | bash
+```
+
+### Verifying the Installation
+
+After installation, you can verify that `dotrun` is installed correctly by running:
+
+```bash
+dotrun version
+```
+
+### Manual Installation
+
+If you prefer to install manually or encounter any issues with the installation script, you can install `dotrun` using the following steps:
+
+1. Install `pipx` if you haven't already:
+
+   * On macOS: `brew install pipx`
+   * On Linux: Follow the installation instructions for your distribution from the [pipx documentation](https://pypa.github.io/pipx/installation/)
+2. Ensure `pipx` is in your PATH:
+
+```bash
+pipx ensurepath
+```
+
+1. Install `dotrun` using `pipx`:
+
+```bash
+pipx install dotrun
+```
+
+If you experience problems, please open a GitHub issue.
 
 ### macOS performance
 
@@ -116,28 +129,34 @@ docker buildx build --push --platform linux/arm/v7,linux/arm64/v8,linux/amd64 --
 You can install the package locally using either pip or poetry.
 
 ### Using pip
+
 ```bash
 pip3 install . requests==2.31.0
 ```
 
 ### Using Poetry
+
 ```bash
 pip install poetry
 poetry install --no-interaction
 ```
 
 To run dotrun off alternative base images such as local images, you can use the `--image` flag.
+
 ```bash
 dotrun --image "localimage" exec echo hello
 ```
 
 To run dotrun off alternative releases, besides the `:latest` release, you can use the `--release` flag.
+
 ```bash
 dotrun --release "latest" serve
 ```
 
-Note that before changing the base image you should run 
+Note that before changing the base image you should run
+
 ```bash
 dotrun clean
 ```
+
 to get rid of the old virtualenv.
