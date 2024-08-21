@@ -4,8 +4,8 @@ import os
 import platform
 import re
 import sys
-import time
 import threading
+import time
 from importlib import metadata
 
 # Packages
@@ -276,8 +276,8 @@ def _start_container_with_image(dotrun, image_uri, command_list):
 
     print(f"Using image: {image_uri}")
 
-    # Download the image
-    dotrun._pull_image(image_uri, exit_on_download_error=True)
+    # Download the image, silently ignore download errors
+    dotrun._pull_image(image_uri, exit_on_download_error=False)
 
     # Start dotrun from the supplied base image
     try:
