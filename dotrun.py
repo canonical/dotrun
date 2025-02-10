@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+import json
 import os
 import platform
 import re
@@ -97,6 +97,19 @@ class Dotrun:
                 mounts=self._prepare_mounts([]),
                 remove=True,
             )
+
+    def _set_dotrun_state(self, key, value):
+        """
+        Set a project preference
+        """
+        if os.path.exists(".dotrun.json"):
+            with open(".dotrun.json", "r") as f:
+                state = json.load(f)
+        else:
+            state = {}
+        state[key] = value
+        with open(".dotrun.json", "w") as f:
+            json.dump(state, f)
 
     def _prepare_mounts(self, command):
         mounts = [
@@ -300,6 +313,14 @@ def cli():
         dotrun._pull_image()
         print("Latest image pulled successfully.")
         sys.exit(1)
+
+    if len(command) > 1 and command[1] == "use":
+        if len(command) < 4:
+            print("Usage: dotrun use <python|node> <version>")
+            sys.exit(1)
+        dotrun._set_dotrun_state(f"{command[2]}_version", command[3])
+        print(f"Using {command[2]} version {command[3]}")
+        sys.exit(0)
 
     # Options for starting the container using different base images
     if result := _handle_image_cli_param(dotrun, command):

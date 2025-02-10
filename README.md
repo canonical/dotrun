@@ -31,6 +31,7 @@ $ dotrun serve -m "/path/to/mount":"localname" # Mount additional directory and 
 $ dotrun refresh image # Download the latest version of dotrun-image
 $ dotrun --release {release-version} # Use a specific image tag for dotrun. Useful for switching versions
 $ dotrun --image {image-name} # Use a specific image for dotrun. Useful for running dotrun off local images
+$ dotrun use python 3.8 && dotrun clean && dotrun install # Use a specific python version for dotrun.
 ```
 
 - Note that the `--image` and `--release` arguments cannot be used together, as `--image` will take precedence over `--release`
@@ -68,8 +69,9 @@ If you prefer to install manually or encounter any issues with the installation 
 
 1. Install `pipx` if you haven't already:
 
-   * On macOS: `brew install pipx`
-   * On Linux: Follow the installation instructions for your distribution from the [pipx documentation](https://pypa.github.io/pipx/installation/)
+   - On macOS: `brew install pipx`
+   - On Linux: Follow the installation instructions for your distribution from the [pipx documentation](https://pypa.github.io/pipx/installation/)
+
 2. Ensure `pipx` is in your PATH:
 
 ```bash
