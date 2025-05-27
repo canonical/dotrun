@@ -7,7 +7,7 @@ import sys
 import threading
 import time
 from importlib import metadata
-from typing import List, Mapping
+from typing import Mapping
 
 # Packages
 import docker
@@ -184,14 +184,14 @@ class Dotrun:
                 attributes[binding_parts[0]] = binding_parts[1]
                 del command[index]
 
-            # check for extra options with the same value (i.e. multiple mounts or ports)
+            # check for extra options with the same value,
+            # for example multiple mounts or ports
             if option in command:
                 attributes = get_attributes(command, attributes)
 
             return attributes
-        
-        return get_attributes(command, {})
 
+        return get_attributes(command, {})
 
     def _get_additional_ports(self, command) -> Mapping[str, str]:
         """
@@ -205,12 +205,16 @@ class Dotrun:
         """
         return self._get_binding_attrs("-m", command)
 
-    def create_container(self, command, image_name=None) -> dockerContainers.Container:
+    def create_container(
+        self, command, image_name=None
+    ) -> dockerContainers.Container:
         if not image_name:
             image_name = self.BASE_IMAGE_NAME
 
         # set up binding ports (container:host)
-        ports: Mapping[str, int | list[int] | tuple[str, int] | None] | None = {}
+        ports: (
+            Mapping[str, int | list[int] | tuple[str, int] | None] | None
+        ) = {}
         ports[str(self.project_port)] = self.project_port
         additional_ports = self._get_additional_ports(command)
         for container_port, host_port in additional_ports.items():
@@ -249,7 +253,8 @@ class Dotrun:
             command=command,
             ports=ports,
             network_mode=network_mode,
-        ) # type: ignore
+        )  # type: ignore
+
 
 def _extract_cli_command_arg(pattern, command_list):
     """

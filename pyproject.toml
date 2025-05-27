@@ -16,7 +16,6 @@ python-slugify = '8.0.4'
 docker = '7.1.0'
 dockerpty = '0.4.1'
 
-
 [build-system]
 requires = ['poetry>=0.12']
 build-backend = 'poetry.masonry.api'
