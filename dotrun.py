@@ -7,10 +7,14 @@ import sys
 import threading
 import time
 from importlib import metadata
+from typing import List, Mapping
 
 # Packages
 import docker
 import dockerpty
+import docker.errors as dockerErrors
+import docker.types as dockerTypes
+import docker.models.containers as dockerContainers
 from dotenv import dotenv_values
 from slugify import slugify
 
@@ -23,7 +27,10 @@ class Dotrun:
     def __init__(self):
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
-        self.project_port = dotenv_values(".env").get("PORT", 8080)
+        self.project_port = int(8080)
+        port_value = dotenv_values(".env").get("PORT")
+        if port_value is not None:
+            self.project_port = int(port_value)
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
@@ -49,7 +56,7 @@ class Dotrun:
         try:
             self.docker_client = docker.from_env()
             self.docker_client.ping()
-        except (docker.errors.APIError, docker.errors.DockerException) as e:
+        except (dockerErrors.APIError, dockerErrors.DockerException) as e:
             print(e)
             print(
                 "Dotrun needs Docker to work, please check"
@@ -63,7 +70,7 @@ class Dotrun:
             # Pull the image in the background
             print("Checking for dotrun image updates...")
             threading.Thread(target=self._pull_image)
-        except docker.errors.ImageNotFound:
+        except dockerErrors.ImageNotFound:
             print("Getting the dotrun image...")
             self._pull_image()
 
@@ -75,7 +82,7 @@ class Dotrun:
         repository, tag = image_uri.split(":")
         try:
             self.docker_client.images.pull(repository=repository, tag=tag)
-        except (docker.errors.APIError, docker.errors.ImageNotFound) as e:
+        except (dockerErrors.APIError, dockerErrors.ImageNotFound) as e:
             print(f"Unable to download image: {image_name}")
             # Optionally quit if image download fails
             if exit_on_download_error:
@@ -86,7 +93,7 @@ class Dotrun:
     def _create_cache_volume(self):
         try:
             self.docker_client.volumes.get("dotrun-cache")
-        except docker.errors.NotFound:
+        except dockerErrors.NotFound:
             self.docker_client.volumes.create(name="dotrun-cache")
 
             # We need to fix the volume ownership
@@ -113,14 +120,14 @@ class Dotrun:
 
     def _prepare_mounts(self, command):
         mounts = [
-            docker.types.Mount(
+            dockerTypes.Mount(
                 target=f"{self.container_home}.cache",
                 source="dotrun-cache",
                 type="volume",
                 read_only=False,
                 consistency="delegated",
             ),
-            docker.types.Mount(
+            dockerTypes.Mount(
                 target=self.container_path,
                 source=self.cwd,
                 type="bind",
@@ -132,11 +139,11 @@ class Dotrun:
 
         additional_mounts = self._get_additional_mounts(command)
         if additional_mounts:
-            for mount in additional_mounts:
+            for host_path, container_mount in additional_mounts.items():
                 mounts.append(
-                    docker.types.Mount(
-                        target=f"{self.container_path}/{mount[1]}",
-                        source=f"{mount[0]}",
+                    dockerTypes.Mount(
+                        target=f"{self.container_home}/{container_mount}",
+                        source=f"{host_path}",
                         type="bind",
                         read_only=False,
                         consistency="cached",
@@ -164,35 +171,53 @@ class Dotrun:
         # Remove duplicated hyphens
         return re.sub(r"(-)+", r"\1", name)
 
+    def _get_binding_attrs(self, option, command) -> Mapping[str, str]:
+        if option not in command:
+            return {}
+
+        def get_attributes(command, attributes):
+            index: int = command.index(option)
+            option_value: str = command[index + 1]
+            del command[index]
+            if ":" in option_value:
+                binding_parts = option_value.split(":")
+                attributes[binding_parts[0]] = binding_parts[1]
+                del command[index]
+
+            # check for extra options with the same value (i.e. multiple mounts or ports)
+            if option in command:
+                attributes = get_attributes(command, attributes)
+
+            return attributes
+        
+        return get_attributes(command, {})
+
+
+    def _get_additional_ports(self, command) -> Mapping[str, str]:
+        """
+        Return a list of additional ports to expose in the container
+        """
+        return self._get_binding_attrs("-p", command)
+
     def _get_additional_mounts(self, command):
         """
         Return a list of additional mounts
         """
-        if "-m" not in command:
-            return
+        return self._get_binding_attrs("-m", command)
 
-        def get_mount(command, mounts):
-            mount_index = command.index("-m")
-            mount_string = command[mount_index + 1]
-            del command[mount_index]
-            if ":" in mount_string:
-                mount_parts = mount_string.split(":")
-                mounts.append(mount_parts)
-                del command[mount_index]
-
-            if "-m" in command:
-                mounts = get_mount(command, mounts)
-
-            return mounts
-
-        return get_mount(command, [])
-
-    def create_container(self, command, image_name=None):
+    def create_container(self, command, image_name=None) -> dockerContainers.Container:
         if not image_name:
             image_name = self.BASE_IMAGE_NAME
-        ports = {self.project_port: self.project_port}
+
+        # set up binding ports (container:host)
+        ports: Mapping[str, int | list[int] | tuple[str, int] | None] | None = {}
+        ports[str(self.project_port)] = self.project_port
+        # additional_ports = self._get_additional_ports(command)
+        # ports.update(additional_ports)
+
         # Run on the same network mode as the host
         network_mode = None
+
         if command[1:]:
             first_cmd = command[1:][0]
 
@@ -204,10 +229,12 @@ class Dotrun:
             name = self._get_container_name(first_cmd)
         else:
             name = self._get_container_name()
-        if self.network_host_mode:
+
+        if self.network_host_mode:# and len(additional_ports) == 0:
             # network_mode host is incompatible with ports option
             ports = None
             network_mode = "host"
+            print("Using 'host' network mode")
 
         return self.docker_client.containers.create(
             image=image_name,
@@ -221,8 +248,7 @@ class Dotrun:
             command=command,
             ports=ports,
             network_mode=network_mode,
-        )
-
+        ) # type: ignore
 
 def _extract_cli_command_arg(pattern, command_list):
     """
@@ -232,7 +258,7 @@ def _extract_cli_command_arg(pattern, command_list):
 
     and remove the command from the command list.
     """
-    pattern = re.compile(f"--{pattern} [^\s]+")  # noqa
+    pattern = re.compile(f"--{pattern} [^\s]+")  # type: ignore # noqa
     if match := re.search(pattern, " ".join(command_list)):
         # Extract the value from the cli arg
         command_arg = match.group(0)
@@ -295,7 +321,7 @@ def _start_container_with_image(dotrun, image_uri, command_list):
     # Start dotrun from the supplied base image
     try:
         return dotrun.create_container(command_list, image_name=image_uri)
-    except docker.errors.ImageNotFound as e:
+    except dockerErrors.ImageNotFound as e:
         print(e)
         sys.exit(1)
 
