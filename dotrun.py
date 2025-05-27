@@ -212,8 +212,9 @@ class Dotrun:
         # set up binding ports (container:host)
         ports: Mapping[str, int | list[int] | tuple[str, int] | None] | None = {}
         ports[str(self.project_port)] = self.project_port
-        # additional_ports = self._get_additional_ports(command)
-        # ports.update(additional_ports)
+        additional_ports = self._get_additional_ports(command)
+        for container_port, host_port in additional_ports.items():
+            ports[container_port] = int(host_port)
 
         # Run on the same network mode as the host
         network_mode = None
@@ -230,7 +231,7 @@ class Dotrun:
         else:
             name = self._get_container_name()
 
-        if self.network_host_mode:# and len(additional_ports) == 0:
+        if self.network_host_mode and len(additional_ports) == 0:
             # network_mode host is incompatible with ports option
             ports = None
             network_mode = "host"
