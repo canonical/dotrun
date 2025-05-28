@@ -11,10 +11,10 @@ from typing import Mapping
 
 # Packages
 import docker
+import docker.errors
+import docker.types
+import docker.models.containers
 import dockerpty
-import docker.errors as dockerErrors
-import docker.types as dockerTypes
-import docker.models.containers as dockerContainers
 from dotenv import dotenv_values
 from slugify import slugify
 
@@ -27,10 +27,9 @@ class Dotrun:
     def __init__(self):
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
-        self.project_port = int(8080)
-        port_value = dotenv_values(".env").get("PORT")
-        if port_value is not None:
-            self.project_port = int(port_value)
+        self.project_port = dotenv_values(".env").get("PORT", 8080)
+        if self.project_port is not None:
+            self.project_port = int(self.project_port)
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
@@ -56,7 +55,7 @@ class Dotrun:
         try:
             self.docker_client = docker.from_env()
             self.docker_client.ping()
-        except (dockerErrors.APIError, dockerErrors.DockerException) as e:
+        except (docker.errors.APIError, docker.errors.DockerException) as e:
             print(e)
             print(
                 "Dotrun needs Docker to work, please check"
@@ -70,7 +69,7 @@ class Dotrun:
             # Pull the image in the background
             print("Checking for dotrun image updates...")
             threading.Thread(target=self._pull_image)
-        except dockerErrors.ImageNotFound:
+        except docker.errors.ImageNotFound:
             print("Getting the dotrun image...")
             self._pull_image()
 
@@ -82,7 +81,7 @@ class Dotrun:
         repository, tag = image_uri.split(":")
         try:
             self.docker_client.images.pull(repository=repository, tag=tag)
-        except (dockerErrors.APIError, dockerErrors.ImageNotFound) as e:
+        except (docker.errors.APIError, docker.errors.ImageNotFound) as e:
             print(f"Unable to download image: {image_name}")
             # Optionally quit if image download fails
             if exit_on_download_error:
@@ -93,7 +92,7 @@ class Dotrun:
     def _create_cache_volume(self):
         try:
             self.docker_client.volumes.get("dotrun-cache")
-        except dockerErrors.NotFound:
+        except docker.errors.NotFound:
             self.docker_client.volumes.create(name="dotrun-cache")
 
             # We need to fix the volume ownership
@@ -120,14 +119,14 @@ class Dotrun:
 
     def _prepare_mounts(self, command):
         mounts = [
-            dockerTypes.Mount(
+            docker.types.Mount(
                 target=f"{self.container_home}.cache",
                 source="dotrun-cache",
                 type="volume",
                 read_only=False,
                 consistency="delegated",
             ),
-            dockerTypes.Mount(
+            docker.types.Mount(
                 target=self.container_path,
                 source=self.cwd,
                 type="bind",
@@ -141,7 +140,7 @@ class Dotrun:
         if additional_mounts:
             for host_path, container_mount in additional_mounts.items():
                 mounts.append(
-                    dockerTypes.Mount(
+                    docker.types.Mount(
                         target=f"{self.container_home}/{container_mount}",
                         source=f"{host_path}",
                         type="bind",
@@ -207,7 +206,7 @@ class Dotrun:
 
     def create_container(
         self, command, image_name=None
-    ) -> dockerContainers.Container:
+    ) -> docker.models.containers.Container:
         if not image_name:
             image_name = self.BASE_IMAGE_NAME
 
@@ -215,7 +214,7 @@ class Dotrun:
         ports: (
             Mapping[str, int | list[int] | tuple[str, int] | None] | None
         ) = {}
-        ports[str(self.project_port)] = self.project_port
+        ports[str(self.project_port)] = self.project_port  # type: ignore
         additional_ports = self._get_additional_ports(command)
         for container_port, host_port in additional_ports.items():
             ports[container_port] = int(host_port)
@@ -235,11 +234,10 @@ class Dotrun:
         else:
             name = self._get_container_name()
 
-        if self.network_host_mode and len(additional_ports) == 0:
+        if self.network_host_mode:
             # network_mode host is incompatible with ports option
             ports = None
             network_mode = "host"
-            print("Using 'host' network mode")
 
         return self.docker_client.containers.create(
             image=image_name,
@@ -327,7 +325,7 @@ def _start_container_with_image(dotrun, image_uri, command_list):
     # Start dotrun from the supplied base image
     try:
         return dotrun.create_container(command_list, image_name=image_uri)
-    except dockerErrors.ImageNotFound as e:
+    except docker.errors.ImageNotFound as e:
         print(e)
         sys.exit(1)
 
