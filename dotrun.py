@@ -27,7 +27,7 @@ class Dotrun:
     def __init__(self):
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
-        self.project_port = dotenv_values(".env").get("PORT", 8080)
+        self.project_port = int(dotenv_values(".env").get("PORT", "8080"))
         if self.project_port is not None:
             self.project_port = int(self.project_port)
         self.container_home = "/home/ubuntu/"
