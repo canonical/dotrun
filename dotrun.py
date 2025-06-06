@@ -7,9 +7,13 @@ import sys
 import threading
 import time
 from importlib import metadata
+from typing import Mapping
 
 # Packages
 import docker
+import docker.errors
+import docker.types
+import docker.models.containers
 import dockerpty
 from dotenv import dotenv_values
 from slugify import slugify
@@ -24,6 +28,8 @@ class Dotrun:
         self.cwd = os.getcwd()
         self.project_name = slugify(os.path.basename(self.cwd))
         self.project_port = dotenv_values(".env").get("PORT", 8080)
+        if self.project_port is not None:
+            self.project_port = int(self.project_port)
         self.container_home = "/home/ubuntu/"
         self.container_path = f"{self.container_home}{self.project_name}"
         # --network host is only supported on Linux
@@ -132,11 +138,11 @@ class Dotrun:
 
         additional_mounts = self._get_additional_mounts(command)
         if additional_mounts:
-            for mount in additional_mounts:
+            for host_path, container_mount in additional_mounts.items():
                 mounts.append(
                     docker.types.Mount(
-                        target=f"{self.container_path}/{mount[1]}",
-                        source=f"{mount[0]}",
+                        target=f"{self.container_home}/{container_mount}",
+                        source=f"{host_path}",
                         type="bind",
                         read_only=False,
                         consistency="cached",
@@ -164,35 +170,56 @@ class Dotrun:
         # Remove duplicated hyphens
         return re.sub(r"(-)+", r"\1", name)
 
+    def _get_binding_attrs(self, option, command) -> Mapping[str, str]:
+        if option not in command:
+            return {}
+
+        def get_attributes(command, attributes):
+            index: int = command.index(option)
+            option_value: str = command[index + 1]
+            del command[index]
+            if ":" in option_value:
+                binding_parts = option_value.split(":")
+                attributes[binding_parts[0]] = binding_parts[1]
+                del command[index]
+
+            # check for extra options with the same value,
+            # for example multiple mounts or ports
+            if option in command:
+                attributes = get_attributes(command, attributes)
+
+            return attributes
+
+        return get_attributes(command, {})
+
+    def _get_additional_ports(self, command) -> Mapping[str, str]:
+        """
+        Return a list of additional ports to expose in the container
+        """
+        return self._get_binding_attrs("-p", command)
+
     def _get_additional_mounts(self, command):
         """
         Return a list of additional mounts
         """
-        if "-m" not in command:
-            return
+        return self._get_binding_attrs("-m", command)
 
-        def get_mount(command, mounts):
-            mount_index = command.index("-m")
-            mount_string = command[mount_index + 1]
-            del command[mount_index]
-            if ":" in mount_string:
-                mount_parts = mount_string.split(":")
-                mounts.append(mount_parts)
-                del command[mount_index]
-
-            if "-m" in command:
-                mounts = get_mount(command, mounts)
-
-            return mounts
-
-        return get_mount(command, [])
-
-    def create_container(self, command, image_name=None):
+    def create_container(
+        self, command, image_name=None
+    ) -> docker.models.containers.Container:
         if not image_name:
             image_name = self.BASE_IMAGE_NAME
-        ports = {self.project_port: self.project_port}
+
+        # set up binding ports (container:host)
+        ports = {}
+        ports[str(self.project_port)] = self.project_port
+        additional_ports = self._get_additional_ports(command)
+        for container_port, host_port in additional_ports.items():
+            ports[container_port] = int(host_port)
+
         # Run on the same network mode as the host
         network_mode = None
+
         if command[1:]:
             first_cmd = command[1:][0]
 
@@ -204,6 +231,7 @@ class Dotrun:
             name = self._get_container_name(first_cmd)
         else:
             name = self._get_container_name()
+
         if self.network_host_mode:
             # network_mode host is incompatible with ports option
             ports = None
@@ -221,7 +249,7 @@ class Dotrun:
             command=command,
             ports=ports,
             network_mode=network_mode,
-        )
+        )  # type: ignore
 
 
 def _extract_cli_command_arg(pattern, command_list):
