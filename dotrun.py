@@ -141,7 +141,7 @@ class Dotrun:
             for host_path, container_mount in additional_mounts.items():
                 mounts.append(
                     docker.types.Mount(
-                        target=f"{self.container_home}/{container_mount}",
+                        target=f"{self.container_path}/{container_mount}",
                         source=f"{host_path}",
                         type="bind",
                         read_only=False,
