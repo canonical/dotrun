@@ -74,15 +74,15 @@ If you prefer to install manually or encounter any issues with the installation 
 
 2. Ensure `pipx` is in your PATH:
 
-```bash
-pipx ensurepath
-```
+    ```bash
+    pipx ensurepath
+    ```
 
-1. Install `dotrun` using `pipx`:
+3. Install `dotrun` using `pipx`:
 
-```bash
-pipx install dotrun
-```
+    ```bash
+    pipx install dotrun
+    ```
 
 If you experience problems, please open a GitHub issue.
 
