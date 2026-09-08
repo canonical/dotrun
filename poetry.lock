@@ -172,19 +172,20 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-slugify"
-version = "8.0.4"
+version = "9.0.0"
 description = "A Python slugify application that also handles Unicode"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.10"
 files = [
-    {file = "python-slugify-8.0.4.tar.gz", hash = "sha256:59202371d1d05b54a9e7720c5e038f928f45daaffe41dd10822f3907b937c856"},
-    {file = "python_slugify-8.0.4-py2.py3-none-any.whl", hash = "sha256:276540b79961052b66b7d116620b36518847f52d5fd9e3a70164fc8c50faa6b8"},
+    {file = "python_slugify-9.0.0-py3-none-any.whl", hash = "sha256:b1180fb0fd6b3590e7fbd8328b08d56cde9dcac736527a070c0a811480621316"},
+    {file = "python_slugify-9.0.0.tar.gz", hash = "sha256:1cd20fe7ebf941b11964a92aba9e5319edfe18606276c6e2481b92e737cde44a"},
 ]
 
 [package.dependencies]
 text-unidecode = ">=1.3"
 
 [package.extras]
+anyascii = ["anyascii (>=0.3.2)"]
 unidecode = ["Unidecode (>=1.1.1)"]
 
 [[package]]
@@ -273,4 +274,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "0c5fd7cdd07fa151573afea5766ad80bec66b846b8f65b47a43f307eedbcc40c"
+content-hash = "00adfefa649b2d965c237fcd28159382efd67b85497a2aa3608e6b1ff171e514"
